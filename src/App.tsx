@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PocketBase from 'pocketbase';
 import './App.css';
 
 // 1. Definition der Typen
@@ -18,31 +19,69 @@ interface MealsState {
   [day: string]: Meal[];
 }
 
+// PocketBase Instanz (Ersetze die IP durch die deines Linux-Servers)
+const pb = new PocketBase('http://127.0.0.1:8090');
+const COLLECTION_NAME = 'meals_data';
+
 const daysOfWeek = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 
 export default function WeeklyMealPlanner() {
-  // States mit expliziten Typen initialisieren
-  const [meals, setMeals] = useState<MealsState>(() => {
-    const saved = localStorage.getItem("meals");
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const [orders, setOrders] = useState<Orders>(() => {
-    const saved = localStorage.getItem("orders");
-    return saved ? JSON.parse(saved) : {};
-  });
-
+  const [meals, setMeals] = useState<MealsState>({});
+  const [orders, setOrders] = useState<Orders>({});
   const [currentName, setCurrentName] = useState("");
   const [selectedDay, setSelectedDay] = useState(daysOfWeek[0]);
   const [selectedMealNumber, setSelectedMealNumber] = useState("");
+  const [isOnline, setIsOnline] = useState(false);
 
+  // Daten beim Start laden
   useEffect(() => {
+    async function loadInitialData() {
+      try {
+        // 1. Versuch: PocketBase
+        const record = await pb.collection(COLLECTION_NAME).getFirstListItem('');
+        setMeals(record.content.meals || {});
+        setOrders(record.content.orders || {});
+        setIsOnline(true);
+        console.log("Daten von PocketBase geladen");
+      } catch (err) {
+        // 2. Versuch: Fallback LocalStorage
+        console.warn("PocketBase nicht erreichbar, nutze LocalStorage");
+        const savedMeals = localStorage.getItem("meals");
+        const savedOrders = localStorage.getItem("orders");
+        if (savedMeals) setMeals(JSON.parse(savedMeals));
+        if (savedOrders) setOrders(JSON.parse(savedOrders));
+        setIsOnline(false);
+      }
+    }
+    loadInitialData();
+  }, []);
+
+  // Daten synchronisieren (PocketBase & LocalStorage)
+  useEffect(() => {
+    // Immer im LocalStorage sichern (als Backup)
     localStorage.setItem("meals", JSON.stringify(meals));
-  }, [meals]);
-
-  useEffect(() => {
     localStorage.setItem("orders", JSON.stringify(orders));
-  }, [orders]);
+
+    // Wenn online, auch in PocketBase sichern
+    const syncPocketBase = async () => {
+      try {
+        const data = { content: { meals, orders } };
+        const record = await pb.collection(COLLECTION_NAME).getFirstListItem('');
+        await pb.collection(COLLECTION_NAME).update(record.id, data);
+      } catch (err) {
+        // Falls kein Record existiert, neu erstellen
+        try {
+          await pb.collection(COLLECTION_NAME).create({ content: { meals, orders } });
+        } catch (e) {
+          setIsOnline(false);
+        }
+      }
+    };
+
+    if (Object.keys(meals).length > 0 || Object.keys(orders).length > 0) {
+      syncPocketBase();
+    }
+  }, [meals, orders]);
 
   const addMeal = (day: string, meal: Meal) => {
     setMeals((prev: MealsState) => ({
@@ -54,28 +93,27 @@ export default function WeeklyMealPlanner() {
   const addOrder = () => {
     if (!currentName || !selectedMealNumber) return;
 
-    const meal = meals[selectedDay]?.find(
-      (m: Meal) => m.number === selectedMealNumber
-    );
+    const meal = meals[selectedDay]?.find((m: Meal) => m.number === selectedMealNumber);
     if (!meal) return;
 
     setOrders((prev: Orders) => ({
       ...prev,
-      [currentName]: {
-        ...(prev[currentName] || {}),
-        [selectedDay]: meal,
-      },
+      [currentName]: { ...(prev[currentName] || {}), [selectedDay]: meal },
     }));
-
     setSelectedMealNumber("");
   };
 
   const calculateBill = (name: string) => {
     const userOrders = orders[name] || {};
-    return Object.values(userOrders).reduce(
-      (sum: number, meal: Meal) => sum + Number(meal.price),
-      0
-    );
+  
+    return Object.values(userOrders).reduce((sum: number, meal: Meal) => {
+      // Falls price kein String ist (z.B. schon eine Number), wandeln wir ihn sicherheitshalber um
+      const priceString = String(meal.price).replace(',', '.');
+      const priceNum = parseFloat(priceString);
+
+      // Falls der Preis ungültig ist (z.B. Text statt Zahl), addieren wir 0, um Fehler zu vermeiden
+      return sum + (isNaN(priceNum) ? 0 : priceNum);
+    }, 0);
   };
   
   const resetWeek = () => {
@@ -127,16 +165,6 @@ export default function WeeklyMealPlanner() {
         />
 
         <button onClick={addOrder}>Eintragen</button>
-        <button onClick={resetWeek}
-  		  style={{ 
-    	 	marginTop: 40, 
-    		padding: 10, 
-    		backgroundColor: "red", 
-    		color: "white",
-    		border: "none",
-    		cursor: "pointer"
-  		  }}
-	  	>Woche zurücksetzen</button>
       </div>
 
       <div style={{ marginTop: 40 }}>
@@ -157,6 +185,16 @@ export default function WeeklyMealPlanner() {
             </div>
           </div>
         ))}
+        <button onClick={resetWeek}
+  		  style={{ 
+    	 	marginTop: 40, 
+    		padding: 10, 
+    		backgroundColor: "red", 
+    		color: "white",
+    		border: "none",
+    		cursor: "pointer"
+  		  }}
+	  	>Woche zurücksetzen</button>
       </div>
     </div>
   );
