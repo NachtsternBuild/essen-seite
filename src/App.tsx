@@ -1,7 +1,22 @@
-import React, { useState, useEffect } from "react";
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react';
+import './App.css';
+
+// 1. Definition der Typen
+interface Meal {
+  name: string;
+  price: string | number;
+  number: string;
+}
+
+interface Orders {
+  [name: string]: {
+    [day: string]: Meal;
+  };
+}
+
+interface MealsState {
+  [day: string]: Meal[];
+}
 
 const daysOfWeek = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 
