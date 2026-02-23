@@ -125,6 +125,9 @@ export default function WeeklyMealPlanner() {
   return (
     <div style={{ padding: 20, maxWidth: 1000, margin: "0 auto" }}>
       <h1>Wochen-Speiseplan</h1>
+	  <p style={{ color: isOnline ? "green" : "red" }}>
+	  Status: {isOnline ? "♦" : "♦"}
+	  </p>
 
       {daysOfWeek.map((day) => (
         <div key={day} style={{ border: "1px solid #ccc", padding: 10, marginBottom: 15 }}>
