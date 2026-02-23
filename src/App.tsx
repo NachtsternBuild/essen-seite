@@ -116,10 +116,31 @@ export default function WeeklyMealPlanner() {
     }, 0);
   };
   
-  const resetWeek = () => {
+  const resetWeek = async () => {
     if (!confirm("Wirklich alles für diese Woche löschen?")) return;
+
+    // 1. Lokalen State leeren (UI wird sofort aktualisiert)
     setMeals({});
     setOrders({});
+
+    // 2. LocalStorage leeren (Fallback-Sicherheit)
+    localStorage.removeItem("meals");
+    localStorage.removeItem("orders");
+
+    // 3. PocketBase leeren
+    try {
+      const record = await pb.collection(COLLECTION_NAME).getFirstListItem('');
+      // Wir setzen das 'content' Feld in der DB auf leer zurück
+      await pb.collection(COLLECTION_NAME).update(record.id, {
+        content: { meals: {}, orders: {} }
+      });
+      console.log("Datenbank erfolgreich zurückgesetzt");
+      setIsOnline(true);
+    } catch (err) {
+      console.error("Fehler beim Zurücksetzen der Datenbank:", err);
+      setIsOnline(false);
+      // Da LocalStorage oben schon geleert wurde, ist der Fallback hier "sauber"
+    }
   };
 
   return (
