@@ -19,14 +19,14 @@ interface MealsState {
 }
 
 const daysOfWeek = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
-
 export default function WeeklyMealPlanner() {
-  const [meals, setMeals] = useState(() => {
+  // States mit expliziten Typen initialisieren
+  const [meals, setMeals] = useState<MealsState>(() => {
     const saved = localStorage.getItem("meals");
     return saved ? JSON.parse(saved) : {};
   });
 
-  const [orders, setOrders] = useState(() => {
+  const [orders, setOrders] = useState<Orders>(() => {
     const saved = localStorage.getItem("orders");
     return saved ? JSON.parse(saved) : {};
   });
