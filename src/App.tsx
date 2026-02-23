@@ -19,6 +19,7 @@ interface MealsState {
 }
 
 const daysOfWeek = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
+
 export default function WeeklyMealPlanner() {
   // States mit expliziten Typen initialisieren
   const [meals, setMeals] = useState<MealsState>(() => {
@@ -43,8 +44,8 @@ export default function WeeklyMealPlanner() {
     localStorage.setItem("orders", JSON.stringify(orders));
   }, [orders]);
 
-  const addMeal = (day, meal) => {
-    setMeals((prev) => ({
+  const addMeal = (day: string, meal: Meal) => {
+    setMeals((prev: MealsState) => ({
       ...prev,
       [day]: [...(prev[day] || []), meal],
     }));
@@ -54,11 +55,11 @@ export default function WeeklyMealPlanner() {
     if (!currentName || !selectedMealNumber) return;
 
     const meal = meals[selectedDay]?.find(
-      (m) => m.number === selectedMealNumber
+      (m: Meal) => m.number === selectedMealNumber
     );
     if (!meal) return;
 
-    setOrders((prev) => ({
+    setOrders((prev: Orders) => ({
       ...prev,
       [currentName]: {
         ...(prev[currentName] || {}),
@@ -69,10 +70,10 @@ export default function WeeklyMealPlanner() {
     setSelectedMealNumber("");
   };
 
-  const calculateBill = (name) => {
+  const calculateBill = (name: string) => {
     const userOrders = orders[name] || {};
     return Object.values(userOrders).reduce(
-      (sum, meal) => sum + Number(meal.price),
+      (sum: number, meal: Meal) => sum + Number(meal.price),
       0
     );
   };
@@ -81,8 +82,6 @@ export default function WeeklyMealPlanner() {
     if (!confirm("Wirklich alles für diese Woche löschen?")) return;
     setMeals({});
     setOrders({});
-    localStorage.removeItem("meals");
-    localStorage.removeItem("orders");
   };
 
   return (
@@ -163,7 +162,13 @@ export default function WeeklyMealPlanner() {
   );
 }
 
-function AddMealForm({ day, onAdd }) {
+// Props Interface für die Form
+interface AddMealFormProps {
+  day: string;
+  onAdd: (day: string, meal: Meal) => void;
+}
+
+function AddMealForm({ day, onAdd }: AddMealFormProps) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [number, setNumber] = useState("");
@@ -171,9 +176,7 @@ function AddMealForm({ day, onAdd }) {
   const handleAdd = () => {
     if (!name || !price || !number) return;
     onAdd(day, { name, price, number });
-    setName("");
-    setPrice("");
-    setNumber("");
+    setName(""); setPrice(""); setNumber("");
   };
 
   return (
