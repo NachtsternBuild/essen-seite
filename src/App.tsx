@@ -116,6 +116,33 @@ export default function WeeklyMealPlanner() {
     }, 0);
   };
   
+  const getWeeklySummary = () => {
+    const summary: { [day: string]: { [num: string]: { name: string, count: number } } } = {};
+    let totalWeeklySum = 0;
+
+    // Wir gehen durch alle Personen
+    Object.values(orders).forEach(userDayMap => {
+      // Wir gehen durch jeden Tag, an dem diese Person bestellt hat
+      Object.entries(userDayMap).forEach(([day, meal]) => {
+        if (!summary[day]) summary[day] = {};
+      
+        if (!summary[day][meal.number]) {
+          summary[day][meal.number] = { name: meal.name, count: 0 };
+        }
+      
+        summary[day][meal.number].count += 1;
+
+        // Preis-Berechnung für die Gesamtsumme
+        const priceNum = parseFloat(String(meal.price).replace(',', '.'));
+        totalWeeklySum += isNaN(priceNum) ? 0 : priceNum;
+      });
+    });
+
+    return { summary, totalWeeklySum };
+  };
+
+  const { summary, totalWeeklySum } = getWeeklySummary();
+  
   const resetWeek = async () => {
     if (!confirm("Wirklich alles für diese Woche löschen?")) return;
 
@@ -142,6 +169,40 @@ export default function WeeklyMealPlanner() {
       // Da LocalStorage oben schon geleert wurde, ist der Fallback hier "sauber"
     }
   };
+  
+  const removeMeal = (day: string, index: number) => {
+    setMeals((prev) => {
+      const newMeals = { ...prev };
+      newMeals[day] = newMeals[day].filter((_, i) => i !== index);
+      return newMeals;
+    });
+  };
+  
+  // Einzelnen Tag eines Nutzers löschen
+  const removeOrder = (name: string, day: string) => {
+    setOrders((prev) => {
+      const userOrders = { ...prev[name] };
+      delete userOrders[day]; // Entfernt den spezifischen Tag
+
+      const newOrders = { ...prev };
+      if (Object.keys(userOrders).length === 0) {
+        delete newOrders[name]; // Wenn keine Tage mehr übrig sind, Nutzer ganz löschen
+      } else {
+        newOrders[name] = userOrders;
+      }
+      return newOrders;
+    });
+  };
+
+  // Kompletten Nutzer (z.B. Heinz) löschen
+  const removeUserEntirely = (name: string) => {
+    if (!confirm(`Alle Bestellungen von ${name} wirklich löschen?`)) return;
+    setOrders((prev) => {
+      const newOrders = { ...prev };
+      delete newOrders[name];
+      return newOrders;
+    });
+  };
 
   return (
     <div style={{ padding: 20, maxWidth: 1000, margin: "0 auto" }}>
@@ -155,10 +216,11 @@ export default function WeeklyMealPlanner() {
           <h2>{day}</h2>
 
           {(meals[day] || []).map((meal, idx) => (
-            <div key={idx}>
-              #{meal.number} – {meal.name} ({meal.price} €)
-            </div>
-          ))}
+  		  <div key={idx} style={{ display: "flex", justifyContent: "space-between", maxWidth: "300px" }}>
+    	  	<span>#{meal.number} – {meal.name} ({meal.price} €)</span>
+    	  	<button onClick={() => removeMeal(day, idx)} style={{ marginLeft: 10, color: "red" }}>x</button>
+  		  </div>
+		  ))}
 
           <AddMealForm day={day} onAdd={addMeal} />
         </div>
@@ -192,23 +254,55 @@ export default function WeeklyMealPlanner() {
       </div>
 
       <div style={{ marginTop: 40 }}>
-        <h2>Bestellungen & Abrechnung</h2>
+  		<h2>Bestellungen & Abrechnung</h2>
 
-        {Object.keys(orders).map((name) => (
-          <div key={name} style={{ border: "1px solid #aaa", padding: 10, marginBottom: 10 }}>
-            <strong>{name}</strong>
+  		{Object.keys(orders).map((name) => (
+    	<div key={name} style={{ border: "1px solid #aaa", padding: 10, marginBottom: 10, position: 'relative' }}>
+      		<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        		<strong>{name}</strong>
+        		<button onClick={() => removeUserEntirely(name)}
+          		style={{ backgroundColor: "#ffcccc", border: "1px solid red", fontSize: "0.8em", cursor: "pointer" }}
+        		>Komplett löschen
+        		</button>
+      		</div>
 
-            {Object.entries(orders[name]).map(([day, meal], idx) => (
-              <div key={idx}>
-                {day}: {meal.name} ({meal.price} €)
-              </div>
-            ))}
+      	{Object.entries(orders[name]).map(([day, meal], idx) => (
+        <div key={idx} style={{ fontSize: "0.9em", margin: "5px 0", display: "flex", alignItems: "center" }}>
+          <button 
+            onClick={() => removeOrder(name, day)}
+            style={{ marginRight: 10, border: "none", background: "none", cursor: "pointer", color: "red" }}
+          >
+            🗑️
+          </button>
+          {day}: {meal.name} ({meal.price} €)
+        </div>
+      		))}
 
-            <div>
-              <strong>Gesamt: {calculateBill(name).toFixed(2)} €</strong>
-            </div>
-          </div>
-        ))}
+      		<div style={{ borderTop: "1px solid #eee", marginTop: 5 }}>
+        		<strong>Gesamt: {calculateBill(name).toFixed(2)} €</strong>
+      		</div>
+    	</div>
+  		))}
+  
+        <div style={{ marginTop: 40, padding: 20, border: "1px solid #ddd" }}>
+  		<h2>Einkaufsliste / Küchen-Übersicht</h2>
+  
+  		{daysOfWeek.map(day => (
+    		summary[day] ? (
+      		<div key={day} style={{ marginBottom: 15 }}>
+        		<h3 style={{ margin: "5px 0" }}>{day}</h3>
+        		{Object.entries(summary[day]).map(([num, data]) => (
+          		<div key={num}>
+            		<strong>{data.count}x</strong> – Menü #{num} ({data.name})
+          		</div>
+        		))}
+      		</div>
+    		) : null
+  		))}
+  		<div style={{ marginTop: 20, paddingTop: 10, borderTop: "2px solid #333", fontSize: "1.2em" }}>
+    		<strong>Gesamtkosten alle Personen: {totalWeeklySum.toFixed(2)} €</strong>
+  		</div>
+		</div>
         <button onClick={resetWeek}
   		  style={{ 
     	 	marginTop: 40, 
