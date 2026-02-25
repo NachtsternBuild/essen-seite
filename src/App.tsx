@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import PocketBase from 'pocketbase';
+
 import './App.css';
 
 // --- Typen ---
@@ -27,55 +28,67 @@ interface AppData {
   previous: WeekData | null;
 }
 
+
 const pb = new PocketBase('http://127.0.0.1:8090');
 const COLLECTION_NAME = 'meals_data';
 const daysOfWeek = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 
 export default function WeeklyMealPlanner() {
   const [view, setView] = useState<"current" | "archive">("current");
-  const [data, setData] = useState<AppData>({
-    current: { meals: {}, orders: {} },
-    previous: null
+  const [data, setData] = useState<AppData>(() => {
+    // INITIAL LOAD: Direkt aus LocalStorage lesen für 0ms Ladezeit
+    const saved = localStorage.getItem("meal_planner_data");
+    return saved ? JSON.parse(saved) : { current: { meals: {}, orders: {} }, previous: null };
   });
   const [isOnline, setIsOnline] = useState(false);
-
+  
   const [currentName, setCurrentName] = useState("");
   const [selectedDay, setSelectedDay] = useState(daysOfWeek[0]);
   const [selectedMealNumber, setSelectedMealNumber] = useState("");
 
-  // Daten laden
+  // 1. INITIALER SYNC (PocketBase -> Local)
   useEffect(() => {
-    async function loadData() {
+    async function fetchFromPB() {
       try {
         const record = await pb.collection(COLLECTION_NAME).getFirstListItem('');
-        if (record.content) setData(record.content);
+        if (record.content) {
+          setData(record.content);
+          localStorage.setItem("meal_planner_data", JSON.stringify(record.content));
+        }
         setIsOnline(true);
       } catch (err) {
-        const saved = localStorage.getItem("meal_planner_data");
-        if (saved) setData(JSON.parse(saved));
+        console.log("PocketBase nicht erreichbar, nutze lokale Daten.");
         setIsOnline(false);
       }
     }
-    loadData();
+    fetchFromPB();
   }, []);
 
-  // Sync
+  // 2. AUTO-SAVE (Local -> PocketBase)
+  // Wir nutzen einen Effekt, der auf 'data' reagiert
   useEffect(() => {
     localStorage.setItem("meal_planner_data", JSON.stringify(data));
-    const sync = async () => {
+    
+    const timer = setTimeout(async () => {
       try {
         const record = await pb.collection(COLLECTION_NAME).getFirstListItem('');
         await pb.collection(COLLECTION_NAME).update(record.id, { content: data });
         setIsOnline(true);
       } catch (e) {
+        // Falls Rekord nicht existiert, erstellen
         try {
           await pb.collection(COLLECTION_NAME).create({ content: data });
           setIsOnline(true);
-        } catch (err) { setIsOnline(false); }
+        } catch (err) {
+          setIsOnline(false);
+        }
       }
-    };
-    sync();
+    }, 500); // Debounce: Nicht bei jedem Tastendruck senden, sondern kurz warten
+
+    return () => clearTimeout(timer);
   }, [data]);
+
+  // --- Logik-Funktionen (bleiben funktional identisch) ---
 
   const addMeal = (day: string, meal: Meal) => {
     setData(prev => ({
@@ -249,11 +262,11 @@ export default function WeeklyMealPlanner() {
 
   return (
     <div style={{ padding: 20, maxWidth: 900, margin: "0 auto", fontFamily: "Arial, sans-serif", color: "#333" }}>
-      <nav style={{ marginBottom: "30px", display: "flex", gap: "10px", alignItems: "center" }}>
-        <button onClick={() => setView("current")} style={navBtnStyle(view === "current")}>Nächste Woche</button>
-        <button onClick={() => setView("archive")} style={navBtnStyle(view === "archive")}>Aktuelle Woche</button>
-        <div style={{ marginLeft: "auto", fontSize: "0.8em", color: isOnline ? "green" : "red" }}>
-          {isOnline ? "● Server Sync" : "○ Offline (Lokal)"}
+     <nav style={{ marginBottom: "30px", display: "flex", gap: "10px", alignItems: "center" }}>
+         <button onClick={() => setView("current")} style={navBtnStyle(view === "current")}>Nächste Woche</button>
+         <button onClick={() => setView("archive")} style={navBtnStyle(view === "archive")}>Aktuelle Woche</button>
+         <div style={{ marginLeft: "auto", fontSize: "0.8em", color: isOnline ? "#28a745" : "#dc3545", fontWeight: "bold" }}>
+          {isOnline ? "● Live Cloud Sync" : "○ Offline Modus (Lokal gespeichert)"}
         </div>
       </nav>
 
