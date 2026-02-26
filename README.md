@@ -41,7 +41,7 @@ npm run build
 to get the Superuser Interface
 
 4. Add Admin configuration:
-	- Open `http://0.0.0.0:8090/_/`  in your browser.
+	- Open `http://0.0.0.0:8090/_/` in your browser or your custom IP-Address.
 	- Create your admin account → Follow the Instructions in the Terminal
 	- Go to Collections → New Collectionn
 	- Name: meals_data
