@@ -141,12 +141,44 @@ export default function WeeklyMealPlanner() {
     }, 0);
   };
   
-  // remove a meal from the menu
+  // remove a meal from the menu AND delete associated orders
   const removeMealTemplate = (day: string, index: number) => {
     setData(prev => {
+      // get the meal from the index
+      const mealToDelete = prev.current.meals[day]?.[index];
+      if (!mealToDelete) return prev;
+
+      // create a menu list for the day
       const newMeals = { ...prev.current.meals };
       newMeals[day] = newMeals[day].filter((_, i) => i !== index);
-      return { ...prev, current: { ...prev.current, meals: newMeals } };
+
+      // clean the orders
+      const newOrders = { ...prev.current.orders };
+      
+      Object.keys(newOrders).forEach(person => {
+        const userOrders = { ...newOrders[person] };
+        
+        // person order meal → remove the person
+        if (userOrders[day] && userOrders[day].number === mealToDelete.number) {
+          delete userOrders[day];
+        }
+
+        // remove the user if the user have are 0 orders
+        if (Object.keys(userOrders).length === 0) {
+          delete newOrders[person];
+        } else {
+          newOrders[person] = userOrders;
+        }
+      });
+
+      return { 
+        ...prev, 
+        current: { 
+          ...prev.current, 
+          meals: newMeals, 
+          orders: newOrders 
+        } 
+      };
     });
   };
   
@@ -219,12 +251,24 @@ export default function WeeklyMealPlanner() {
 
   // create the week
   const renderWeek = (weekData: WeekData, isArchive: boolean) => {
-    const title = isArchive ? "Aktuelle Woche (Archiv)" : "Nächste Woche";
+    const title = isArchive ? "Aktuelle Woche " : "Nächste Woche";
     const grandTotal = calculateGrandTotal(weekData.orders);
+
+    // HILFSFUNKTION: Zählt die Menüs für einen bestimmten Tag
+    const getOrderSummary = (day: string) => {
+      const summary: { [mealNumber: string]: number } = {};
+      Object.values(weekData.orders).forEach(userOrders => {
+        const meal = userOrders[day];
+        if (meal) {
+          summary[meal.number] = (summary[meal.number] || 0) + 1;
+        }
+      });
+      return summary;
+    };
 
     return (
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "center", marginBottom: "20px" }}>
           <h2 style={{ color: isArchive ? "#666" : "#333", margin: 0 }}>🍴 {title}</h2>
           <div style={{ display: "flex", gap: "10px" }}>
             <button onClick={() => exportWeekAsText(weekData, title)} style={{ ...btnStyle, backgroundColor: "#6c757d" }}>📄 Text Export</button>
@@ -232,40 +276,57 @@ export default function WeeklyMealPlanner() {
           </div>
         </div>
 
-        {daysOfWeek.map(day => (
-          <div key={day} style={{ border: "1px solid #ddd", padding: "15px", marginBottom: "20px", borderRadius: "8px", backgroundColor: "#fff" }}>
-            <h3 style={{ borderBottom: "2px solid #eee", marginTop: 0 }}>{day}</h3>
-            
-            <div style={{ marginBottom: "10px" }}>
-              <strong>Angebot:</strong>
-              {weekData.meals[day]?.map((m, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.95em" }}>
-                  <span>#{m.number} - {m.name} ({m.price}€)</span>
-                  {!isArchive && (
-                    <button onClick={() => removeMealTemplate(day, i)} style={{ border: "none", background: "none", color: "red", cursor: "pointer" }}>✕</button>
-                  )}
-                </div>
-              ))}
-            </div>
+        {daysOfWeek.map(day => {
+          const summary = getOrderSummary(day); 
 
-            <div style={{ backgroundColor: "#fcfcfc", padding: "10px", borderRadius: "5px" }}>
-              <strong>Bestellungen:</strong>
-              <ul style={{ listStyle: "none", padding: "5px 0", margin: 0 }}>
-                {Object.entries(weekData.orders).map(([person, days]) => (
-                  days[day] ? (
-                    <li key={person} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "3px" }}>
-                      {!isArchive && (
-                        <button onClick={() => removeSingleOrder(person, day)} style={{ border: "none", background: "none", cursor: "pointer", fontSize: "0.8em" }}>🗑️</button>
-                      )}
-                      <span><strong>{person}:</strong> Menü #{days[day].number}</span>
-                    </li>
-                  ) : null
+          return (
+            <div key={day} style={{ border: "1px solid #ddd", padding: "15px", marginBottom: "20px", borderRadius: "8px", backgroundColor: "#fff" }}>
+              <h3 style={{ borderBottom: "2px solid #eee", marginTop: 0 }}>{day}</h3>
+              
+              <div style={{ marginBottom: "15px" }}>
+                <strong>Angebot:</strong>
+                {weekData.meals[day]?.map((m, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.95em", border: "1px solid #ddd", borderRadius: "5px", padding: "10px" }}>
+                    <span>#{m.number} - {m.name} ({m.price}€)</span>
+                    {!isArchive && (
+                      <button onClick={() => removeMealTemplate(day, i)} style={{ border: "none", background: "none", color: "red", cursor: "pointer" }}>✕</button>
+                    )}
+                  </div>
                 ))}
-              </ul>
+              </div>
+
+              <div style={{ backgroundColor: "#fcfcfc", padding: "10px", borderRadius: "5px", border: "1px solid #FFB5C5" }}>
+                <strong>Einzelbestellungen:</strong>
+                <ul style={{ listStyle: "none", padding: "5px 0", margin: 0 }}>
+                  {Object.entries(weekData.orders).map(([person, days]) => (
+                    days[day] ? (
+                      <li key={person} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "3px" }}>
+                        {!isArchive && (
+                          <button onClick={() => removeSingleOrder(person, day)} style={{ border: "none", background: "none", cursor: "pointer", fontSize: "0.8em" }}>🗑️</button>
+                        )}
+                        <span><strong>{person}:</strong> Menü #{days[day].number}</span>
+                      </li>
+                    ) : null
+                  ))}
+                </ul>
+              </div>
+
+              {Object.keys(summary).length > 0 && (
+                <div style={{ padding: "10px", borderRadius: "5px", marginBottom: "10px", border: "1px solid #FFB5C5" }}>
+                  <strong>Gesamtzahl Bestellungen:</strong>
+                  <div style={{ display: "flex", gap: "15px", marginTop: "5px", flexWrap: "wrap" }}>
+                    {Object.entries(summary).sort().map(([num, count]) => (
+                      <span key={num} style={{ backgroundColor: "#8B0000", color: "white", padding: "2px 8px", borderRadius: "12px" }}>
+                        Menü #{num}: <strong>{count}x</strong>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {!isArchive && <AddMealForm day={day} onAdd={addMeal} />}
             </div>
-            {!isArchive && <AddMealForm day={day} onAdd={addMeal} />}
-          </div>
-        ))}
+          );
+        })}
 
         <div style={{ background: "#e9ecef", padding: "20px", borderRadius: "8px", marginTop: "30px" }}>
           <h3>💰 Abrechnung</h3>
@@ -275,6 +336,7 @@ export default function WeeklyMealPlanner() {
                 <th>Name</th><th>Tage</th><th>Summe</th>{!isArchive && <th>Aktion</th>}
               </tr>
             </thead>
+            
             <tbody>
               {Object.entries(weekData.orders).map(([person, userOrders]) => (
                 <tr key={person} style={{ borderBottom: "1px solid #eee" }}>
@@ -289,6 +351,7 @@ export default function WeeklyMealPlanner() {
                 </tr>
               ))}
             </tbody>
+            
             <tfoot>
               <tr style={{ backgroundColor: "#ddd" }}>
                 <td colSpan={2} style={{ padding: "10px", fontWeight: "bold" }}>GESAMT</td>
