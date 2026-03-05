@@ -14,6 +14,8 @@ cd ./essen-seite
 3. Get additional dependencies:
 ```sh
 npm install
+# if pocketbase was not installed automatically:
+npm install pocketbase
 ```
 4. Customize API URL:
 ```tsx
