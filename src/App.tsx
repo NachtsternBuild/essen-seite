@@ -696,6 +696,6 @@ const smallBtn = {
   border: "none", 
   borderRadius: "4px", 
   cursor: "pointer", 
-  fontSize: "0.8em",
+  fontSize: "0.9em",
   fontWeight: "bold" as const 
 };
