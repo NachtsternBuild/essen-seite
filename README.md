@@ -16,6 +16,7 @@ cd ./essen-seite
 npm install
 # if pocketbase was not installed automatically:
 npm install pocketbase
+npm install js-sha256
 ```
 4. Customize API URL:
 ```tsx

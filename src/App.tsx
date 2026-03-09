@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import PocketBase from 'pocketbase';
+import { sha256 } from 'js-sha256';
 import './App.css';
 
 // typedefinition
@@ -37,11 +38,7 @@ interface User {
 
 // generate hash token
 async function hashToken(token: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(token);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return sha256(token); 
 }
 
 // config the site
