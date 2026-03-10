@@ -8,6 +8,7 @@ interface Meal {
   name: string;
   price: string | number;
   number: string;
+  edited?: boolean; // Markierung für Änderungen
 }
 
 interface Orders {
@@ -24,8 +25,9 @@ interface WeekData {
 }
 
 interface AppData {
-  current: WeekData;
-  previous: WeekData | null;
+  upcoming: WeekData;  // Die Planung für die nächste Woche
+  current: WeekData;   // Die aktive Woche (mit 8:30 Uhr Sperre)
+  previous: WeekData | null; // Das Archiv
 }
 
 interface User {
@@ -49,10 +51,15 @@ const daysOfWeek = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 
 // function to create the weekly meal planner
 export default function WeeklyMealPlanner() {
-  const [view, setView] = useState<"current" | "archive" | "users">("current");
+  const [view, setView] = useState<"current" | "archive" | "users">("current"); 
+  // Initialer State im useState:
   const [data, setData] = useState<AppData>(() => {
     const saved = localStorage.getItem("meal_planner_data");
-    return saved ? JSON.parse(saved) : { current: { meals: {}, orders: {} }, previous: null };
+    return saved ? JSON.parse(saved) : { 
+      upcoming: { meals: {}, orders: {} }, 
+      current: { meals: {}, orders: {} }, 
+      previous: null 
+    };
   });
 
   const [token, setToken] = useState(localStorage.getItem("user_token") || "");
@@ -94,9 +101,12 @@ export default function WeeklyMealPlanner() {
       try {
         const record = await pb.collection(COLLECTION_NAME).getFirstListItem('');
         if (record.content) {
-          setData(record.content);
-          localStorage.setItem("meal_planner_data", JSON.stringify(record.content));
-        }
+  		  setData({
+    	  	upcoming: record.content.upcoming || { meals: {}, orders: {} },
+    	  	current: record.content.current || { meals: {}, orders: {} },
+    	  	previous: record.content.previous || null
+  		  });
+		}
         await fetchUsers();
         setIsOnline(true);
       } catch (err) {
@@ -143,6 +153,29 @@ export default function WeeklyMealPlanner() {
     }
 
     return true;
+  };
+  
+  // function if you can modify the day
+  const isLocked = (day: string) => {
+    const now = new Date();
+    const daysMap: { [key: string]: number } = { "Montag": 1, "Dienstag": 2, "Mittwoch": 3, "Donnerstag": 4, "Freitag": 5 };
+    const targetDayNum = daysMap[day];
+    const currentDayNum = now.getDay(); // 0 = So, 1 = Mo...
+
+    // the day passed away
+    if (currentDayNum > targetDayNum) return true;
+
+    // if the day is today
+    if (currentDayNum === targetDayNum) {
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      if (hours > 8 || (hours === 8 && minutes >= 30)) return true;
+    }
+  
+    // at Sa/So the block the full week
+    if (currentDayNum === 0 || currentDayNum === 6) return true;
+
+    return false;
   };
   
   // function to reset the user tokens
@@ -231,10 +264,41 @@ export default function WeeklyMealPlanner() {
   };
   
   // function to reset a week and put the week to the archive
+  // Rotation: Planung -> Aktuell -> Vorwoche
   const resetWeek = () => {
     if (!checkAuth(undefined, 'admin')) return;
-    if (!confirm("Wochenplanung abschließen?")) return;
-    setData(prev => ({ previous: prev.current, current: { meals: {}, orders: {} } }));
+    if (!confirm("Planung abschließen?")) return;
+
+    setData(prev => ({
+      previous: prev.current,      // active week to previous
+      current: prev.upcoming,      // upcoming week to previous week
+      upcoming: { meals: {}, orders: {} } // new empty week
+    }));
+  };
+
+  // update orders in the active week
+  const updateCurrentOrder = (day: string, mealNumber: string) => {
+    if (!currentUser) return;
+    if (isLocked(day)) return alert("Nach 08:30 Uhr sind keine Änderungen für heute mehr möglich!");
+
+    setData(prev => {
+      const meal = prev.current.meals[day]?.find(m => m.number === mealNumber);
+      if (!meal) return prev;
+
+      return {
+        ...prev,
+        current: {
+          ...prev.current,
+          orders: {
+            ...prev.current.orders,
+            [currentUser.name]: { 
+              ...(prev.current.orders[currentUser.name] || {}), 
+              [day]: { ...meal, edited: true } // Markierung hinzufügen
+            }
+          }
+        }
+      };
+    });
   };
 
   // function to create a user
@@ -281,6 +345,47 @@ export default function WeeklyMealPlanner() {
     } catch (e) { 
       alert("Löschen fehlgeschlagen."); 
     }
+  };
+  
+  // function to add orders in the upcoming week
+  const addUpcomingOrder = (day: string, mealNumber: string) => {
+    if (!currentUser || !checkAuth(currentUser.name)) return;
+  
+    const meal = data.upcoming.meals[day]?.find(m => m.number === mealNumber);
+    if (!meal) return alert("Menü-Nummer in der Planung nicht gefunden!");
+
+    setData(prev => ({
+      ...prev,
+      upcoming: {
+        ...prev.upcoming,
+        orders: {
+          ...prev.upcoming.orders,
+          [currentUser.name]: { ...(prev.upcoming.orders[currentUser.name] || {}), [day]: meal }
+        }
+      }
+    }));
+  };
+
+  // function to add meals for the next week
+  const addUpcomingMeal = (day: string, meal: Meal) => {
+    if (!checkAuth(undefined, 'admin')) return;
+    setData(prev => ({
+      ...prev,
+      upcoming: { 
+        ...prev.upcoming, 
+        meals: { ...prev.upcoming.meals, [day]: [...(prev.upcoming.meals[day] || []), meal] } 
+      }
+    }));
+  };
+  
+  // function to remove a meal for upcoming week
+  const removeUpcomingMealTemplate = (day: string, index: number) => {
+    if (!checkAuth(undefined, 'admin')) return;
+    setData(prev => {
+      const newMeals = { ...prev.upcoming.meals };
+      newMeals[day] = newMeals[day].filter((_, i) => i !== index);
+      return { ...prev, upcoming: { ...prev.upcoming, meals: newMeals } };
+    });
   };
   
   // function to export the week as CSV
@@ -341,28 +446,38 @@ export default function WeeklyMealPlanner() {
     Object.values(userOrders).reduce((sum, m) => sum + parseFloat(String(m.price).replace(',', '.')), 0);
 
   // layout the week menu layout
-  const renderWeekContent = (weekData: WeekData, isArchive: boolean) => (
-    <div>
-      {daysOfWeek.map(day => {
-        const summary: { [num: string]: number } = {};
-        Object.values(weekData.orders).forEach(o => { if (o[day]) summary[o[day].number] = (summary[o[day].number] || 0) + 1; });
-
-        return (
-          <div key={day} style={cardStyle}>
-            {/* the main menu layout */}
-            <h3 style={{ borderBottom: "2px solid var(--border-color)", paddingBottom: "5px" }}>{day}</h3>
-            <div style={{ marginBottom: "10px" }}>
-              <strong>Speisekarte:</strong>
-              {weekData.meals[day]?.map((m, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
-                  <span>Menü #{m.number} - {m.name} ({m.price}€)</span>
-                  {!isArchive && currentUser?.is_admin && (
-                    <button onClick={() => removeMealTemplate(day, i)} style={textBtnStyle}>✕</button>
-                  )}
-                </div>
-              ))}
-            </div>
-            
+  const renderWeekContent = (
+  weekData: WeekData, 
+  isArchive: boolean, 
+  isUpcoming: boolean,
+  onAddMeal?: (day: string, meal: Meal) => void, 
+  onRemoveMeal?: (day: string, index: number) => void 
+  ) => (
+  <div>
+    {daysOfWeek.map(day => {
+      const summary: { [num: string]: number } = {};
+      Object.values(weekData.orders).forEach(o => { if (o[day]) summary[o[day].number] = (summary[o[day].number] || 0) + 1; });
+	  	  
+	  const dayIsLocked = isUpcoming ? isLocked(day) : false;
+	  
+      return (
+        <div key={day} style={{ ...cardStyle, opacity: (isLocked(day) && !isArchive && view === "current") ? 0.8 : 1 }}>
+          <h3 style={{ borderBottom: "2px solid var(--border-color)", paddingBottom: "5px" }}>
+            {day} {dayIsLocked && view === "current" && "🔒"}
+          </h3>
+          <div style={{ marginBottom: "10px" }}>
+            <strong>Speisekarte:</strong>
+            {weekData.meals[day]?.map((m, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                <span>Menü #{m.number} - {m.name} ({m.price}€)</span>
+                {/* delete only if not archived, admin is and time has not expired */}
+                {!isArchive && currentUser?.is_admin && !dayIsLocked && (
+                  <button onClick={() => onRemoveMeal?.(day, i)} style={textBtnStyle}>✕</button>
+                )}
+              </div>
+            ))}
+          </div>
+                    
             {/* Menulist */}
             {Object.keys(summary).length > 0 && (
               <div style={summaryBoxStyle}>
@@ -374,18 +489,23 @@ export default function WeeklyMealPlanner() {
             
             {/* all orders for the day */}
             <div style={{ marginTop: "10px" }}>
-              <strong>Bestellungen:</strong>
-              {Object.entries(weekData.orders).map(([person, days]) => days[day] && (
-                <div key={person} style={{ fontSize: "0.9em", display: "flex", gap: "10px", alignItems: "center" }}>
-                  {!isArchive && (person === currentUser?.name || currentUser?.is_admin) && (
-                    <button onClick={() => removeSingleOrder(person, day)} style={textBtnStyle}>✕</button>
-                  )}
-                  <span>{person}: <b>#{days[day].number}</b></span>
-                </div>
-              ))}
-            </div>
-            {!isArchive && currentUser?.is_admin && <AddMealForm day={day} onAdd={addMeal} />}
+            <strong>Bestellungen:</strong>
+            {Object.entries(weekData.orders).map(([person, days]) => days[day] && (
+              <div key={person} style={{ fontSize: "0.9em", display: "flex", gap: "10px", alignItems: "center" }}>
+                {/* block removal of orders for administrators after 8:30 a.m. */}
+                {!isArchive && !dayIsLocked && (person === currentUser?.name || currentUser?.is_admin) && (
+                  <button onClick={() => removeSingleOrder(person, day)} style={textBtnStyle}>✕</button>
+                )}
+                <span>{person}: <b>#{days[day].number}</b> {days[day].edited && "❗"}</span>
+              </div>
+            ))}
           </div>
+
+          {/* only show form if not locked */}
+          {!isArchive && currentUser?.is_admin && !dayIsLocked && (
+            <AddMealForm day={day} onAdd={onAddMeal || (() => {})} />
+          )}
+        </div>
         );
       })}
       
@@ -445,14 +565,14 @@ export default function WeeklyMealPlanner() {
     <div style={{ padding: 20, maxWidth: 900, margin: "0 auto", fontFamily: "sans-serif", color: "var(--text-color)" }}>
       <div style={headerStyle}>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <strong>Token:</strong>
+          <strong>Passwort:</strong>
           {/* token and password layout */}
           <input 
             type="password" 
             value={token} 
             onChange={e => { setToken(e.target.value); localStorage.setItem("user_token", e.target.value); }} 
             style={inputStyle}
-            placeholder="Token eingeben..." 
+            placeholder="Passwort eingeben..." 
           />
           {currentUser ? <span style={{ color: "#007bff", padding: 20 }}>● {currentUser.name} {currentUser.is_admin && "(Admin)"}</span> : <span style={{ color: "#007bff" }}>○ Kein Zugriff</span>}
         </div>
@@ -463,8 +583,9 @@ export default function WeeklyMealPlanner() {
       
       {/* navigation bar */}
       <nav style={{ marginBottom: "25px", display: "flex", gap: "10px" }}>
-        <button onClick={() => setView("current")} style={navBtnStyle(view === "current")}>Planung</button>
-        <button onClick={() => setView("archive")} style={navBtnStyle(view === "archive")}>Aktuelle Woche</button>
+	    <button onClick={() => setView("upcoming")} style={navBtnStyle(view === "upcoming")}>Planung (Nächste Woche)</button>
+  		<button onClick={() => setView("current")} style={navBtnStyle(view === "current")}>Aktuelle Woche</button>
+  		<button onClick={() => setView("archive")} style={navBtnStyle(view === "archive")}>Vorwoche (Archiv)</button>
         {currentUser?.is_admin && (
           <button onClick={() => setView("users")} style={navBtnStyle(view === "users", "#ffc107")}>Benutzer</button>
         )}
@@ -476,17 +597,29 @@ export default function WeeklyMealPlanner() {
     	onDelete={deleteUserRecord} 
     	onResetToken={resetUserToken} 
     	currentSuperuser={currentUser?.is_superuser}
-  		/> ) : view === "current" ? (
-        <>
-          {renderWeekContent(data.current, false)}
-          <OrderForm days={daysOfWeek} onOrder={addOrder} currentUser={currentUser} />
-          {currentUser?.is_admin && (
-            <button onClick={resetWeek} style={resetBtnStyle}>Wochenplanung beenden</button>
-          )}
-        </>
+  		/> ) : view === "upcoming" ? (
+  		<>
+    	  {renderWeekContent(data.upcoming, false, false, addUpcomingMeal, removeUpcomingMealTemplate)}
+    	  <OrderForm days={daysOfWeek} onOrder={addUpcomingOrder} currentUser={currentUser} />
+    	  {currentUser?.is_admin && <button onClick={resetWeek} style={resetBtnStyle}>Wochenplanung beenden</button>}
+	  	</>
+	  ) : view === "current" ? (
+	 	<>
+	      <div style={infoBannerStyle}>
+	        <strong>
+	          📌 Änderungen sind nur für zukünftige Tage oder heute vor 08:30 Uhr möglich.
+	        </strong>
+	      </div>
+	      {renderWeekContent(data.current, false, true, addMeal, removeMealTemplate)}
+	      <OrderForm 
+	        days={daysOfWeek.filter(d => !isLocked(d))} // Only select days that are still available
+	        onOrder={updateCurrentOrder} 
+	        currentUser={currentUser} 
+	      />
+	    </>
       ) : (
         data.previous ? renderWeekContent(data.previous, true) : <p style={{ textAlign: "center", color: "#8B0000" }}>Keine Daten im Archiv.</p>
-      )}
+      )}    
     </div>
   );
 }
@@ -498,7 +631,7 @@ function OrderForm({ days, onOrder, currentUser }: any) {
   if (!currentUser) return null;
 
   return (
-    <div style={{ border: "2px solid #007bff", padding: "20px", marginTop: "30px", borderRadius: "10px"}}>
+    <div style={{ border: "3px solid #007bff", padding: "20px", marginTop: "30px", borderRadius: "12px"}}>
       <h3 style={{ marginTop: 0 }}>Essen bestellen</h3>
       <p>Bestellen für: <b>{currentUser.name}</b></p>
       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
@@ -529,7 +662,7 @@ function UserManagement({ users, onCreate, onDelete, onResetToken, currentSuperu
       <h3>👥 Benutzerverwaltung</h3>
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
         <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
-        <input placeholder="Token" value={token} onChange={e => setToken(e.target.value)} style={inputStyle} />
+        <input placeholder="Passwort" value={token} onChange={e => setToken(e.target.value)} style={inputStyle} />
         <label><input type="checkbox" checked={adm} onChange={e => setAdm(e.target.checked)} /> Admin</label>
 		<button onClick={() => { 
 			onCreate({ name, token: token, is_admin: adm });
@@ -552,11 +685,11 @@ function UserManagement({ users, onCreate, onDelete, onResetToken, currentSuperu
                 <div style={{ display: "flex", gap: "10px" }}>
                   
                   {!u.is_admin && !u.is_superuser && (
-                    <button onClick={() => u.id && onDelete(u.id)} style={textBtnStyle}>Löschen</button>
+                    <button onClick={() => u.id && onDelete(u.id)} style={smallDeleteBtn}>Löschen</button>
                   )}
                   
                   {currentSuperuser && !u.is_superuser && (
-                    <button onClick={() => u.id && onDelete(u.id)} style={textBtnStyle}>Löschen</button>
+                    <button onClick={() => u.id && onDelete(u.id)} style={smallDeleteBtn}>Löschen</button>
                   )}                  
                   {currentSuperuser && (
                     <button onClick={() => {
@@ -579,11 +712,11 @@ function UserManagement({ users, onCreate, onDelete, onResetToken, currentSuperu
 function AddMealForm({ day, onAdd }: { day: string, onAdd: (day: string, meal: Meal) => void }) {
   const [n, setN] = useState(""); const [p, setP] = useState(""); const [num, setNum] = useState("");
   return (
-    <div style={{ marginTop: "15px", borderTop: "1px dashed #ccc", paddingTop: "10px" }}>
-      <input placeholder="Nr" size={2} value={num} onChange={e => setNum(e.target.value)} style={{ marginRight: "5px" }} />
-      <input placeholder="Gericht" value={n} onChange={e => setN(e.target.value)} style={{ marginRight: "5px" }} />
-      <input placeholder="Preis" size={4} value={p} onChange={e => setP(e.target.value)} />
-      <button onClick={() => { if(n&&p&&num) { onAdd(day, { name: n, price: p, number: num }); setN(""); setP(""); setNum(""); } }}>+</button>
+    <div style={{ marginTop: "15px", padding: "10px", fontSize: "1.25" }}>
+      <input placeholder="Nr." size={2} value={num} onChange={e => setNum(e.target.value)} style={ inputStyle } />
+      <input placeholder="Gericht" value={n} onChange={e => setN(e.target.value)} style={ inputStyle } />
+      <input placeholder="Preis" size={6} value={p} onChange={e => setP(e.target.value)} style = { inputStyle }/>
+      <button onClick={() => { if(n&&p&&num) { onAdd(day, { name: n, price: p, number: num }); setN(""); setP(""); setNum(""); } }} style= {{ smallBtn, borderColor: "#007bff", color: "#007bff" }}>+</button>
     </div>
   );
 }
@@ -591,37 +724,49 @@ function AddMealForm({ day, onAdd }: { day: string, onAdd: (day: string, meal: M
 // style
 const headerStyle = { 
   padding: "15px", 
-  borderRadius: "8px", 
+  borderRadius: "12px", 
   marginBottom: "20px", 
   display: "flex", 
   justifyContent: "space-between", 
   alignItems: "center", 
-  border: "1px solid #ddd" 
+  border: "3px solid var(--border-color)" 
 };
 
+const infoBannerStyle = {
+  padding: "15px",
+  borderRadius: "12px",
+  backgroundColor: "var(--input-bg)",
+  marginBottom: "20px",
+  marginTop: "20px",
+  color: "var(--text-color)",
+  border: "3px solid #ffcc00",
+  fontSize: "1.05em"
+}
+
 const cardStyle = { 
-  border: "1px solid var(--border-color)", 
+  border: "3px solid var(--border-color)", 
   backgroundColor: "var(--card-bg)",
   padding: "15px", 
   marginBottom: "20px", 
-  borderRadius: "8px", 
+  borderRadius: "12px", 
   color: "var(--text-color)"
 };
 
-const navBtnStyle = (active: boolean, activeColor = "#333") => ({ 
+const navBtnStyle = (active: boolean, activeColor = "#007bff") => ({ 
   padding: "10px 20px", 
-  backgroundColor: active ? activeColor : "#eee", 
+  backgroundColor: active ? activeColor : "#fff", 
   color: active ? "#fff" : "#333", 
-  border: "none", 
-  borderRadius: "5px", 
+  borderRadius: "12px", 
+  border: "3px solid",
   cursor: "pointer", 
-  fontWeight: "bold" as const 
+  fontWeight: "bold" as const, 
+  transition: "background-color 0.2s"
 });
 
 const inputStyle = { 
-  padding: "8px", 
-  borderRadius: "5px", 
-  border: "1px solid var(--border-color)", 
+  padding: "10px", 
+  borderRadius: "12px", 
+  border: "3px solid var(--border-color)", 
   backgoundColor: "var(--input-bg)",
   color: "var(--text-color)"
 };
@@ -630,14 +775,16 @@ const summaryBoxStyle = {
   display: "flex", 
   gap: "10px", 
   margin: "10px 0", 
-  flexWrap: "wrap" as const 
+  flexWrap: "wrap" as const, 
+  borderRadius: "12px"
 };
 
 const badgeStyle = { 
-  backgroundColor: "#8B0000", 
-  color: "white", 
-  padding: "2px 8px", 
+  backgroundColor: "var(--border-color)", 
+  color: "var(--text-color)", 
+  padding: "4px 10px", 
   borderRadius: "12px", 
+  border: "3px solid #8B0000",
   fontSize: "0.85em" 
 };
 
@@ -646,16 +793,16 @@ const blueBtn = {
   backgroundColor: "#007bff", 
   color: "white", 
   border: "none", 
-  borderRadius: "5px", 
+  borderRadius: "12px", 
   cursor: "pointer" 
 };
 
 const greenBtn = { 
-  padding: "8px 15px", 
+  padding: "10px 15px", 
   backgroundColor: "#28a745", 
   color: "white", 
   border: "none", 
-  borderRadius: "5px", 
+  borderRadius: "12px", 
   cursor: "pointer" 
 };
 
@@ -665,7 +812,7 @@ const resetBtnStyle = {
   color: "white", 
   border: "none", 
   padding: "12px", 
-  borderRadius: "5px", 
+  borderRadius: "12px", 
   width: "100%", 
   cursor: "pointer", 
   fontWeight: "bold" as const 
@@ -675,23 +822,25 @@ const textBtnStyle = {
   color: "red", 
   border: "none", 
   background: "none", 
-  cursor: "pointer" 
+  cursor: "pointer",
+  borderRadius: "12px" 
 };
 
 const smallDeleteBtn = { 
-  fontSize: "0.75em", 
+  fontSize: "0.9em", 
   color: "#dc3545", 
-  border: "1px solid #dc3545", 
-  borderRadius: "3px", 
+  border: "3px solid #dc3545", 
+  borderRadius: "12px", 
   background: "none", 
-  cursor: "pointer" 
+  cursor: "pointer",
+  padding: "10px" 
 };
 
 const smallBtn = { 
-  padding: "5px 10px", 
+  padding: "10px 12px", 
   color: "white", 
   border: "none", 
-  borderRadius: "4px", 
+  borderRadius: "12px", 
   cursor: "pointer", 
   fontSize: "0.9em",
   fontWeight: "bold" as const 
