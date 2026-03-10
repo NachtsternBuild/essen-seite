@@ -51,7 +51,7 @@ const daysOfWeek = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 
 // function to create the weekly meal planner
 export default function WeeklyMealPlanner() {
-  const [view, setView] = useState<"current" | "archive" | "users">("current"); 
+  const [view, setView] = useState<"current" | "archive" | "users" | "upcoming">("current");
   // Initialer State im useState:
   const [data, setData] = useState<AppData>(() => {
     const saved = localStorage.getItem("meal_planner_data");
@@ -219,24 +219,6 @@ export default function WeeklyMealPlanner() {
       });
       return { ...prev, current: { ...prev.current, meals: newMeals, orders: newOrders } };
     });
-  };
-
-  // function to add orders
-  const addOrder = (day: string, mealNumber: string) => {
-    if (!currentUser || !checkAuth(currentUser.name)) return;
-    const meal = data.current.meals[day]?.find(m => m.number === mealNumber);
-    if (!meal) return alert("Menü-Nummer existiert nicht!");
-
-    setData(prev => ({
-      ...prev,
-      current: {
-        ...prev.current,
-        orders: {
-          ...prev.current.orders,
-          [currentUser.name]: { ...(prev.current.orders[currentUser.name] || {}), [day]: meal }
-        }
-      }
-    }));
   };
   
   // function to remove a single order
@@ -618,7 +600,7 @@ export default function WeeklyMealPlanner() {
 	      />
 	    </>
       ) : (
-        data.previous ? renderWeekContent(data.previous, true) : <p style={{ textAlign: "center", color: "#8B0000" }}>Keine Daten im Archiv.</p>
+        data.previous ? renderWeekContent(data.previous, true, false) : <p style={{ textAlign: "center", color: "#8B0000" }}>Keine Daten im Archiv.</p>
       )}    
     </div>
   );
@@ -716,7 +698,7 @@ function AddMealForm({ day, onAdd }: { day: string, onAdd: (day: string, meal: M
       <input placeholder="Nr." size={2} value={num} onChange={e => setNum(e.target.value)} style={ inputStyle } />
       <input placeholder="Gericht" value={n} onChange={e => setN(e.target.value)} style={ inputStyle } />
       <input placeholder="Preis" size={6} value={p} onChange={e => setP(e.target.value)} style = { inputStyle }/>
-      <button onClick={() => { if(n&&p&&num) { onAdd(day, { name: n, price: p, number: num }); setN(""); setP(""); setNum(""); } }} style= {{ smallBtn, borderColor: "#007bff", color: "#007bff" }}>+</button>
+      <button onClick={() => { if(n&&p&&num) { onAdd(day, { name: n, price: p, number: num }); setN(""); setP(""); setNum(""); } }} style= {{ ...smallBtn, borderColor: "#007bff", color: "#007bff" }}>+</button>
     </div>
   );
 }
