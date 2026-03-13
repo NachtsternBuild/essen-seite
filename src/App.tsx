@@ -8,7 +8,7 @@ interface Meal {
   name: string;
   price: string | number;
   number: string;
-  edited?: boolean; // Markierung für Änderungen
+  edited?: boolean; 
 }
 
 interface Orders {
@@ -25,9 +25,9 @@ interface WeekData {
 }
 
 interface AppData {
-  upcoming: WeekData;  // Die Planung für die nächste Woche
-  current: WeekData;   // Die aktive Woche (mit 8:30 Uhr Sperre)
-  previous: WeekData | null; // Das Archiv
+  upcoming: WeekData;  
+  current: WeekData;  
+  previous: WeekData | null; 
 }
 
 interface User {
@@ -472,15 +472,23 @@ export default function WeeklyMealPlanner() {
             {/* all orders for the day */}
             <div style={{ marginTop: "10px" }}>
             <strong>Bestellungen:</strong>
-            {Object.entries(weekData.orders).map(([person, days]) => days[day] && (
-              <div key={person} style={{ fontSize: "0.9em", display: "flex", gap: "10px", alignItems: "center" }}>
-                {/* block removal of orders for administrators after 8:30 a.m. */}
-                {!isArchive && !dayIsLocked && (person === currentUser?.name || currentUser?.is_admin) && (
-                  <button onClick={() => removeSingleOrder(person, day)} style={textBtnStyle}>✕</button>
-                )}
-                <span>{person}: <b>#{days[day].number}</b> {days[day].edited && "❗"}</span>
-              </div>
-            ))}
+            {Object.entries(weekData.orders).map(([person, days]) => {
+    		  const order = days[day];
+    		  if (!order) return null;
+
+    		  return (
+      			<div key={person} style={order.edited ? editedOrderRowStyle : normalOrderRowStyle}>
+        		  {!isArchive && !dayIsLocked && (person === currentUser?.name || currentUser?.is_admin) && (
+          		    <button onClick={() => removeSingleOrder(person, day)} style={textBtnStyle}>✕</button>
+        		  )}
+        
+        		  <span>
+          			{person}: <b>#{order.number}</b> {order.name} 
+          			{order.edited && <span style={{ marginLeft: "5px" }}> (geändert)</span>}
+        		  </span>
+      			</div>
+    		  );
+  			})}
           </div>
 
           {/* only show form if not locked */}
@@ -496,9 +504,9 @@ export default function WeeklyMealPlanner() {
         <h3>💰 Abrechnung</h3>
         <div style={{ display: "flex", gap: "20px", paddingBottom: "20px" }}>
       	  <button onClick={() => exportAsTXT(weekData, isArchive ? "Archiv" : "Aktuelle_Woche")} 
-        	style={{ ...smallBtn, backgroundColor: "#6c757d" }}>📄 TXT Export</button>
+        	style={{ ...greyBtn }}>📄 TXT Export</button>
       	  <button onClick={() => exportAsCSV(weekData, isArchive ? "Archiv" : "Aktuelle_Woche")} 
-      		style={{ ...smallBtn, backgroundColor: "#28a745" }}>📊 CSV Export</button>
+      		style={{ ...greenBtn }}>📊 CSV Export</button>
       	</div>
       	{/* per user */} 
         <table style={{ width: "100%", textAlign: "left" }}>
@@ -698,7 +706,7 @@ function AddMealForm({ day, onAdd }: { day: string, onAdd: (day: string, meal: M
       <input placeholder="Nr." size={2} value={num} onChange={e => setNum(e.target.value)} style={ inputStyle } />
       <input placeholder="Gericht" value={n} onChange={e => setN(e.target.value)} style={ inputStyle } />
       <input placeholder="Preis" size={6} value={p} onChange={e => setP(e.target.value)} style = { inputStyle }/>
-      <button onClick={() => { if(n&&p&&num) { onAdd(day, { name: n, price: p, number: num }); setN(""); setP(""); setNum(""); } }} style= {{ ...smallBtn, borderColor: "#007bff", color: "#007bff" }}>+</button>
+      <button onClick={() => { if(n&&p&&num) { onAdd(day, { name: n, price: p, number: num }); setN(""); setP(""); setNum(""); } }} style= {{ ...greenBtn }}>+</button>
     </div>
   );
 }
@@ -717,7 +725,7 @@ const headerStyle = {
 const infoBannerStyle = {
   padding: "15px",
   borderRadius: "12px",
-  backgroundColor: "var(--input-bg)",
+  backgroundColor: "none",
   marginBottom: "20px",
   marginTop: "20px",
   color: "var(--text-color)",
@@ -762,7 +770,7 @@ const summaryBoxStyle = {
 };
 
 const badgeStyle = { 
-  backgroundColor: "var(--border-color)", 
+  backgroundColor: "none", 
   color: "var(--text-color)", 
   padding: "4px 10px", 
   borderRadius: "12px", 
@@ -787,6 +795,15 @@ const greenBtn = {
   borderRadius: "12px", 
   cursor: "pointer" 
 };
+
+const greyBtn = { 
+  padding: "10px 15px", 
+  backgroundColor: "#6c757d", 
+  color: "white", 
+  border: "none", 
+  borderRadius: "12px", 
+  cursor: "pointer" 
+};  
 
 const resetBtnStyle = { 
   marginTop: "30px", 
@@ -818,12 +835,20 @@ const smallDeleteBtn = {
   padding: "10px" 
 };
 
-const smallBtn = { 
-  padding: "10px 12px", 
-  color: "white", 
-  border: "none", 
-  borderRadius: "12px", 
-  cursor: "pointer", 
-  fontSize: "0.9em",
-  fontWeight: "bold" as const 
+const editedOrderRowStyle = {
+  display: "flex",
+  gap: "10px",
+  alignItems: "center",
+  backgroundColor: "none", 
+  padding: "5px 8px",
+  borderRadius: "8px",
+  border: "3px solid #ffc107", 
+  marginTop: "2px"
+};
+
+const normalOrderRowStyle = {
+  display: "flex",
+  gap: "10px",
+  alignItems: "center",
+  padding: "5px 8px"
 };
