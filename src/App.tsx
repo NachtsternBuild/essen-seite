@@ -232,7 +232,7 @@ export default function WeeklyMealPlanner() {
       else newOrders[person] = newUserOrders;
       return { ...prev, current: { ...prev.current, orders: newOrders } };
     });
-  };
+  }; 
   
   // remove all orders from a user
   const removeUserCompletely = (person: string) => {
@@ -509,22 +509,57 @@ export default function WeeklyMealPlanner() {
       		style={{ ...greenBtn }}>📊 CSV Export</button>
       	</div>
       	{/* per user */} 
-        <table style={{ width: "100%", textAlign: "left" }}>
+        <table style={{ 
+  		  width: "100%", 
+  		  textAlign: "left", 
+  		  borderCollapse: "separate",
+  		  borderSpacing: "0 5px" }}>
           <thead><tr><th>Name</th><th>Anzahl</th><th>Summe</th><th></th></tr></thead>
           <tbody>
-            {Object.entries(weekData.orders).map(([person, userOrders]) => (
-              <tr key={person}>
-                <td>{person}</td>
-                <td>{Object.keys(userOrders).length}x</td>
-                <td><b>{calculateUserTotal(userOrders).toFixed(2)} €</b></td>
-                <td style={{ textAlign: "right" }}>
-                  {!isArchive && (person === currentUser?.name || currentUser?.is_admin) && (
-                    <button onClick={() => removeUserCompletely(person)} style={smallDeleteBtn}>Nutzerbestellungen löschen</button>
-                  )}
-                </td>
-               
-              </tr>
-            ))}
+            {Object.entries(weekData.orders).map(([person, userOrders]) => {
+  			  const hasBeenEdited = Object.values(userOrders).some(m => m.edited === true);
+
+  			  return (
+  			    <tr key={person}>
+      			  <td style={{ 
+            		padding: "15px", 
+            		backgroundColor: "var(--card-bg)",
+            		borderTopLeftRadius: "12px", 
+            		borderBottomLeftRadius: "12px",
+            		borderTop: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)",
+            		borderBottom: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)",
+            		borderLeft: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)" }}>
+        			{person} {hasBeenEdited && <small>(geändert)</small>}
+      			  </td>
+      			  <td style={{ 
+            		padding: "15px", 
+            		backgroundColor: "var(--card-bg)",
+            		borderTop: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)",
+            		borderBottom: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)" }}>
+      			    {Object.keys(userOrders).length}x
+      			  </td>
+      			  <td style={{ 
+            		padding: "15px", 
+            		backgroundColor: "var(--card-bg)",
+            		borderTopRightRadius: "12px", 
+            		borderBottomRightRadius: "12px",
+            		borderTop: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)",
+            		borderBottom: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)",
+            		borderRight: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)" }}>
+      			    <b>{calculateUserTotal(userOrders).toFixed(2)} €</b>
+      			  </td>
+      			  <td style={{ 
+      				textAlign: "right", 
+      				paddingLeft: "15px", 
+      				width: "1%", 
+      				whiteSpace: "nowrap" }}>
+        			{!isArchive && (person === currentUser?.name || currentUser?.is_admin) && (
+          			  <button onClick={() => removeUserCompletely(person)} style={smallDeleteBtn}>Nutzerbestellungen löschen</button>
+        			)}
+      			  </td>
+    			</tr>
+  			  );
+			})}
           </tbody>
           {/* full total */}
           <tfoot style={{ borderTop: "2px solid #333" }}>
@@ -840,8 +875,8 @@ const editedOrderRowStyle = {
   gap: "10px",
   alignItems: "center",
   backgroundColor: "none", 
-  padding: "5px 8px",
-  borderRadius: "8px",
+  padding: "8px 12px",
+  borderRadius: "12px",
   border: "3px solid #ffc107", 
   marginTop: "2px"
 };
