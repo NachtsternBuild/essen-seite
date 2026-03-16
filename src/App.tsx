@@ -411,6 +411,48 @@ export default function WeeklyMealPlanner() {
     downloadFile(txt, `Abrechnung_${title}.txt`, "text/plain;charset=utf-8;");
   };
   
+  // function to export as pdf file
+  const exportAsPDF = async (weekData: WeekData, title: string) => {
+
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+
+    const doc = new jsPDF();
+    const dateStr = new Date().toLocaleDateString();
+
+    doc.setFontSize(18);
+    doc.text(`Abrechnung: ${title.replace('_', ' ')}`, 14, 20);
+
+    doc.setFontSize(10);
+    doc.text(`Erstellt am: ${dateStr}`, 14, 28);
+
+    const tableRows = Object.entries(weekData.orders).map(([person, orders]) => {
+      const total = calculateUserTotal(orders).toFixed(2);
+      const count = Object.keys(orders).length;
+
+      const details = Object.entries(orders)
+        .map(([day, meal]) => `${day}: #${meal.number}`)
+        .join(", ");
+
+      return [person, `${count}x`, `${total} €`, details];
+    });
+
+    const totalSum = Object.values(weekData.orders)
+      .reduce((sum, o) => sum + calculateUserTotal(o), 0)
+      .toFixed(2);
+
+    autoTable(doc, {
+      startY: 35,
+      head: [['Name', 'Anzahl', 'Summe', 'Details']],
+      body: tableRows,
+      foot: [['GESAMT', '', `${totalSum} €`, '']],
+      theme: 'striped',
+      styles: { fontSize: 10 },
+    });
+
+    doc.save(`Abrechnung_${title}.pdf`);
+  };
+  
   // function to download files
   const downloadFile = (content: string, fileName: string, contentType: string) => {
     const blob = new Blob([content], { type: contentType });
@@ -449,7 +491,10 @@ export default function WeeklyMealPlanner() {
           </h3>
           <div style={{ marginBottom: "10px" }}>
             <strong>Speisekarte:</strong>
-            {weekData.meals[day]?.map((m, i) => (
+            {weekData.meals[day]
+  			  ?.slice() // Kopie erstellen, um den Original-State nicht direkt zu mutieren
+  			  .sort((a, b) => parseInt(a.number) - parseInt(b.number)) // Numerisch sortieren
+  			  .map((m, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
                 <span>Menü #{m.number} - {m.name} ({m.price}€)</span>
                 {/* delete only if not archived, admin is and time has not expired */}
@@ -507,6 +552,8 @@ export default function WeeklyMealPlanner() {
         	style={{ ...greyBtn }}>📄 TXT Export</button>
       	  <button onClick={() => exportAsCSV(weekData, isArchive ? "Archiv" : "Aktuelle_Woche")} 
       		style={{ ...greenBtn }}>📊 CSV Export</button>
+      	  <button onClick={() => exportAsPDF(weekData, isArchive ? "Archiv" : "Aktuelle_Woche")} 
+            style={{ ...redBtn }}>📋 PDF Export</button>
       	</div>
       	{/* per user */} 
         <table style={{ 
@@ -625,7 +672,7 @@ export default function WeeklyMealPlanner() {
   		/> ) : view === "upcoming" ? (
   		<>
     	  {renderWeekContent(data.upcoming, false, false, addUpcomingMeal, removeUpcomingMealTemplate)}
-    	  <OrderForm days={daysOfWeek} onOrder={addUpcomingOrder} currentUser={currentUser} />
+    	  <OrderForm days={daysOfWeek} onOrder={addUpcomingOrder} currentUser={currentUser} allMeals={data.upcoming.meals} />
     	  {currentUser?.is_admin && <button onClick={resetWeek} style={resetBtnStyle}>Wochenplanung beenden</button>}
 	  	</>
 	  ) : view === "current" ? (
@@ -636,11 +683,11 @@ export default function WeeklyMealPlanner() {
 	        </strong>
 	      </div>
 	      {renderWeekContent(data.current, false, true, addMeal, removeMealTemplate)}
-	      <OrderForm 
-	        days={daysOfWeek.filter(d => !isLocked(d))} // Only select days that are still available
-	        onOrder={updateCurrentOrder} 
-	        currentUser={currentUser} 
-	      />
+	      <OrderForm days={daysOfWeek.filter(d => !isLocked(d))} 
+  			onOrder={updateCurrentOrder} 
+  			currentUser={currentUser} 
+  			allMeals={data.current.meals} // Hinzugefügt
+		  />
 	    </>
       ) : (
         data.previous ? renderWeekContent(data.previous, true, false) : <p style={{ textAlign: "center", color: "#8B0000" }}>Keine Daten im Archiv.</p>
@@ -650,21 +697,36 @@ export default function WeeklyMealPlanner() {
 }
 
 // layout ordering a menu
-function OrderForm({ days, onOrder, currentUser }: any) {
+function OrderForm({ days, onOrder, currentUser, allMeals = {} }: any) {
   const [day, setDay] = useState(days[0]);
   const [nr, setNr] = useState("");
+
+  const availableNumbers = useMemo(() => {
+    const dayMeals = (allMeals && allMeals[day]) || []; 
+    return dayMeals.map((m: any) => m.number).sort((a: any, b: any) => a - b);
+  }, [day, allMeals]);
+
   if (!currentUser) return null;
 
   return (
     <div style={{ border: "3px solid #007bff", padding: "20px", marginTop: "30px", borderRadius: "12px"}}>
       <h3 style={{ marginTop: 0 }}>Essen bestellen</h3>
       <p>Bestellen für: <b>{currentUser.name}</b></p>
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-        <select value={day} onChange={e => setDay(e.target.value)} style={inputStyle}>
+      <div style={{ display: "center", gap: "10px", flexWrap: "wrap" }}>
+        <select value={day} onChange={e => { setDay(e.target.value); setNr(""); }} style={inputStyle}>
           {days.map((d: string) => <option key={d}>{d}</option>)}
         </select>
-        <input placeholder="Menü Nr." value={nr} onChange={e => setNr(e.target.value)} style={inputStyle} />
-        <button onClick={() => { onOrder(day, nr); setNr(""); }} style={blueBtn}>Bestellen</button>
+
+        <select value={nr} onChange={e => setNr(e.target.value)} style={inputStyle}>
+          <option value="">Menü wählen...</option>
+          {availableNumbers.map((num: string) => (
+            <option key={num} value={num}>Menü #{num}</option>
+          ))}
+        </select>
+
+        <button onClick={() => { if(nr) { onOrder(day, nr); setNr(""); } }} style={blueBtn} disabled={!nr}>
+          Bestellen
+        </button>
       </div>
     </div>
   );
@@ -735,13 +797,29 @@ function UserManagement({ users, onCreate, onDelete, onResetToken, currentSuperu
 
 // layout to add a meal to the list
 function AddMealForm({ day, onAdd }: { day: string, onAdd: (day: string, meal: Meal) => void }) {
-  const [n, setN] = useState(""); const [p, setP] = useState(""); const [num, setNum] = useState("");
+  const [n, setN] = useState(""); 
+  const [p, setP] = useState(""); 
+  const [num, setNum] = useState("");
+
+  const handlePriceChange = (val: string) => {
+    // Erlaubt nur Zahlen, einen Punkt oder ein Komma
+    const regex = /^[0-9]*[.,]?[0-9]*$/;
+    if (val === "" || regex.test(val)) {
+      setP(val);
+    }
+  };
+
   return (
     <div style={{ marginTop: "15px", padding: "10px", fontSize: "1.25" }}>
-      <input placeholder="Nr." size={2} value={num} onChange={e => setNum(e.target.value)} style={ inputStyle } />
-      <input placeholder="Gericht" value={n} onChange={e => setN(e.target.value)} style={ inputStyle } />
-      <input placeholder="Preis" size={6} value={p} onChange={e => setP(e.target.value)} style = { inputStyle }/>
-      <button onClick={() => { if(n&&p&&num) { onAdd(day, { name: n, price: p, number: num }); setN(""); setP(""); setNum(""); } }} style= {{ ...greenBtn }}>+</button>
+      <input type="number" placeholder="Nr." size={2} value={num} onChange={e => setNum(e.target.value)} style={inputStyle} />
+      <input placeholder="Gericht" value={n} onChange={e => setN(e.target.value)} style={inputStyle} />
+      <input placeholder="Preis (z.B. 5,50)" size={6} value={p} onChange={e => handlePriceChange(e.target.value)} style={inputStyle} />
+      <button onClick={() => { 
+        if(n && p && num) { 
+          onAdd(day, { name: n, price: p, number: num }); 
+          setN(""); setP(""); setNum(""); 
+        } 
+      }} style={greenBtn}>+</button>
     </div>
   );
 }
@@ -839,6 +917,16 @@ const greyBtn = {
   borderRadius: "12px", 
   cursor: "pointer" 
 };  
+
+const redBtn = {
+  paddding: "10px 15px",
+  backgroundColor: "#673147",
+  color: "white",
+  border: "none",
+  borderRadius: "12px",
+  cursor: "pointer"
+
+}
 
 const resetBtnStyle = { 
   marginTop: "30px", 
