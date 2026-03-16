@@ -464,7 +464,7 @@ export default function WeeklyMealPlanner() {
             {Object.keys(summary).length > 0 && (
               <div style={summaryBoxStyle}>
                 {Object.entries(summary).sort().map(([num, count]) => (
-                  <span key={num} style={badgeStyle}>Menü #{num}: {count} x</span>
+                  <span key={num} style={badgeStyle}>{count} Mal Menü #{num}</span>
                 ))}
               </div>
             )}
