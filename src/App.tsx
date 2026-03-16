@@ -492,8 +492,8 @@ export default function WeeklyMealPlanner() {
           <div style={{ marginBottom: "10px" }}>
             <strong>Speisekarte:</strong>
             {weekData.meals[day]
-  			  ?.slice() // Kopie erstellen, um den Original-State nicht direkt zu mutieren
-  			  .sort((a, b) => parseInt(a.number) - parseInt(b.number)) // Numerisch sortieren
+  			  ?.slice() // create a copy so as not to modify the original state directly
+  			  .sort((a, b) => parseInt(a.number) - parseInt(b.number)) // sort numerically
   			  .map((m, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
                 <span>Menü #{m.number} - {m.name} ({m.price}€)</span>
@@ -686,7 +686,7 @@ export default function WeeklyMealPlanner() {
 	      <OrderForm days={daysOfWeek.filter(d => !isLocked(d))} 
   			onOrder={updateCurrentOrder} 
   			currentUser={currentUser} 
-  			allMeals={data.current.meals} // Hinzugefügt
+  			allMeals={data.current.meals}
 		  />
 	    </>
       ) : (
