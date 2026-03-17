@@ -648,8 +648,8 @@ export default function WeeklyMealPlanner() {
                 {Object.values(weekData.orders).reduce((total, orders) => total + Object.keys(orders).length, 0)}x
            	    </strong>
         	  </td>
-        	  <td style={{ paddingTop: "10px" }}>
-          	    <strong style={{ fontSize: "1.1em", color: "#28a745" }}>
+        	  <td style={{ paddingTop: "20px" }}>
+          	    <strong style={{ color: "#28a745" }}>
                 {Object.values(weekData.orders)
                   .reduce((total, orders) => total + calculateUserTotal(orders), 0)
                   .toFixed(2)} €
