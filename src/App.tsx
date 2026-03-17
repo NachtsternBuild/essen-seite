@@ -28,6 +28,9 @@ interface AppData {
   upcoming: WeekData;  
   current: WeekData;  
   previous: WeekData | null; 
+  maintenance_active?: boolean;
+  maintenance_start?: string;
+  maintenance_duration?: string;
 }
 
 interface User {
@@ -58,7 +61,10 @@ export default function WeeklyMealPlanner() {
     return saved ? JSON.parse(saved) : { 
       upcoming: { meals: {}, orders: {} }, 
       current: { meals: {}, orders: {} }, 
-      previous: null 
+      previous: null,
+      maintenance_active: false,
+      maintenance_start: "",
+      maintenance_duration: ""
     };
   });
 
@@ -102,10 +108,11 @@ export default function WeeklyMealPlanner() {
         const record = await pb.collection(COLLECTION_NAME).getFirstListItem('');
         if (record.content) {
   		  setData({
-    	  	upcoming: record.content.upcoming || { meals: {}, orders: {} },
-    	  	current: record.content.current || { meals: {}, orders: {} },
-    	  	previous: record.content.previous || null
-  		  });
+            ...record.content, // Dies lädt automatisch auch maintenance_active etc.
+            upcoming: record.content.upcoming || { meals: {}, orders: {} },
+            current: record.content.current || { meals: {}, orders: {} },
+            previous: record.content.previous || null
+          });
 		}
         await fetchUsers();
         setIsOnline(true);
@@ -465,6 +472,29 @@ export default function WeeklyMealPlanner() {
     document.body.removeChild(link);
   };
   
+  // Wartungs-Berechnung
+  const maintenanceInfo = useMemo(() => {
+    if (!data.maintenance_active || !data.maintenance_start) return null;
+    const start = new Date(data.maintenance_start);
+    const now = new Date();
+    const diffHours = Math.round((start.getTime() - now.getTime()) / (1000 * 60 * 60));
+    return {
+      hoursUntil: diffHours,
+      duration: data.maintenance_duration || "unbekannt",
+      isUrgent: diffHours <= 2 && diffHours >= 0
+    };
+  }, [data.maintenance_active, data.maintenance_start, data.maintenance_duration]);
+
+  // Hilfsfunktion zum Speichern der Wartung (nur Superuser)
+  const updateMaintenance = (active: boolean, start?: string, duration?: string) => {
+    setData(prev => ({
+      ...prev,
+      maintenance_active: active,
+      maintenance_start: start ?? prev.maintenance_start,
+      maintenance_duration: duration ?? prev.maintenance_duration
+    }));
+  };
+  
   // calculate user bill
   const calculateUserTotal = (userOrders: { [day: string]: Meal }) => 
     Object.values(userOrders).reduce((sum, m) => sum + parseFloat(String(m.price).replace(',', '.')), 0);
@@ -547,7 +577,8 @@ export default function WeeklyMealPlanner() {
       {/* the bill */}
       <div style={{ ...cardStyle }}>
         <h3>💰 Abrechnung</h3>
-        <div style={{ display: "flex", gap: "20px", paddingBottom: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px", paddingBottom: "20px" }}>
+        
       	  <button onClick={() => exportAsTXT(weekData, isArchive ? "Archiv" : "Aktuelle_Woche")} 
         	style={{ ...greyBtn }}>📄 TXT Export</button>
       	  <button onClick={() => exportAsCSV(weekData, isArchive ? "Archiv" : "Aktuelle_Woche")} 
@@ -635,7 +666,29 @@ export default function WeeklyMealPlanner() {
   // layout header and navigation
   return (
     <div style={{ padding: 20, maxWidth: 900, margin: "0 auto", fontFamily: "sans-serif", color: "var(--text-color)" }}>
-      <div style={headerStyle}>
+    {/* maintenance banner */}
+      {maintenanceInfo && (
+        <div style={{
+          border: "5px solid",
+          borderColor: maintenanceInfo.isUrgent ? "#dc3545" : "#ffc107",
+          background: "none",
+          padding: "15px", 
+          textAlign: "center", 
+          borderRadius: "12px", 
+          marginBottom: "20px"
+        }}>
+          <p style={{ fontSize: "1.5em" }}>
+            <strong>⚠️ WARTUNGSARBEITEN:</strong>
+          </p> 
+          <p>
+            <strong>Beginn in:</strong> ca. {maintenanceInfo.hoursUntil} Stunden
+          </p>
+          <p>
+            <strong>Dauer:</strong> ca. {maintenanceInfo.duration} Stunden
+          </p>
+        </div>
+      )}
+      <div style={headerStyle}>     
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <strong>Passwort:</strong>
           {/* token and password layout */}
@@ -654,7 +707,7 @@ export default function WeeklyMealPlanner() {
       </div>
       
       {/* navigation bar */}
-      <nav style={{ marginBottom: "25px", display: "flex", gap: "10px" }}>
+      <nav style={{ marginBottom: "25px", display: "flex", gap: "7px" }}>
 	    <button onClick={() => setView("upcoming")} style={navBtnStyle(view === "upcoming")}>Planung (Nächste Woche)</button>
   		<button onClick={() => setView("current")} style={navBtnStyle(view === "current")}>Aktuelle Woche</button>
   		<button onClick={() => setView("archive")} style={navBtnStyle(view === "archive")}>Vorwoche (Archiv)</button>
@@ -663,13 +716,49 @@ export default function WeeklyMealPlanner() {
         )}
       </nav>
 	  {view === "users" && currentUser?.is_admin ? (
-        <UserManagement 
-    	users={allUsers} 
-   		onCreate={createUser} 
-    	onDelete={deleteUserRecord} 
-    	onResetToken={resetUserToken} 
-    	currentSuperuser={currentUser?.is_superuser}
-  		/> ) : view === "upcoming" ? (
+	  <>
+        {/* superuser maintenance panel */}
+    	{currentUser.is_superuser && (
+      	  <div style={{ ...cardStyle, border: "3px solid #ffc107", background: "none" }}>
+        	<h3>⚙️ Wartungs-Systemsteuerung</h3>
+        	<p style= {{ fontSize: "1.1em" }}> 
+        	Aktueller Status:
+        	  <div style={{ color: data.maintenance_active ? "#28a745" : "#dc3545"}}>
+          	  	  <b> {data.maintenance_active ? "● Aktiv" : "○ Inaktiv"}</b>
+        	  </div>
+        	</p>
+         	<div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}>
+          	  <input 
+                type="datetime-local" 
+                value={data.maintenance_start || ""} 
+                onChange={e => updateMaintenance(data.maintenance_active || false, e.target.value)} 
+                style={inputStyle} 
+          	  />
+          	  <input 
+            	type="text" 
+            	placeholder="Dauer (z.B. 2 Std)" 
+            	value={data.maintenance_duration || ""} 
+            	onChange={e => updateMaintenance(data.maintenance_active || false, undefined, e.target.value)} 
+            	style={inputStyle} 
+          	  />
+              <button 
+            	onClick={() => updateMaintenance(!data.maintenance_active)} 
+            	style={data.maintenance_active ? redBtn : greenBtn}
+          	  >
+                {data.maintenance_active ? "Wartung beenden" : "Wartung starten"}
+              </button>
+             </div>
+           </div>
+        )}
+          <UserManagement 
+    	  users={allUsers} 
+   		  onCreate={createUser} 
+    	  onDelete={deleteUserRecord} 
+    	  onResetToken={resetUserToken} 
+    	  currentSuperuser={currentUser?.is_superuser}
+  		  />
+  		</> 
+  		) : view === "upcoming" ? (
   		<>
     	  {renderWeekContent(data.upcoming, false, false, addUpcomingMeal, removeUpcomingMealTemplate)}
     	  <OrderForm days={daysOfWeek} onOrder={addUpcomingOrder} currentUser={currentUser} allMeals={data.upcoming.meals} />
@@ -712,7 +801,7 @@ function OrderForm({ days, onOrder, currentUser, allMeals = {} }: any) {
     <div style={{ border: "3px solid #007bff", padding: "20px", marginTop: "30px", borderRadius: "12px"}}>
       <h3 style={{ marginTop: 0 }}>Essen bestellen</h3>
       <p>Bestellen für: <b>{currentUser.name}</b></p>
-      <div style={{ display: "center", gap: "10px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", flexWrap: "wrap" }}>
         <select value={day} onChange={e => { setDay(e.target.value); setNr(""); }} style={inputStyle}>
           {days.map((d: string) => <option key={d}>{d}</option>)}
         </select>
@@ -771,7 +860,7 @@ function UserManagement({ users, onCreate, onDelete, onResetToken, currentSuperu
               <td>
                 <div style={{ display: "flex", gap: "10px" }}>
                   
-                  {!u.is_admin && !u.is_superuser && (
+                  {!currentSuperuser && !u.is_admin && !u.is_superuser && (
                     <button onClick={() => u.id && onDelete(u.id)} style={smallDeleteBtn}>Löschen</button>
                   )}
                   
@@ -810,10 +899,10 @@ function AddMealForm({ day, onAdd }: { day: string, onAdd: (day: string, meal: M
   };
 
   return (
-    <div style={{ marginTop: "15px", padding: "10px", fontSize: "1.25" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "15px", padding: "10px", fontSize: "1.25", gap: "5px" }}>
       <input type="number" placeholder="Nr." size={2} value={num} onChange={e => setNum(e.target.value)} style={inputStyle} />
       <input placeholder="Gericht" value={n} onChange={e => setN(e.target.value)} style={inputStyle} />
-      <input placeholder="Preis (z.B. 5,50)" size={6} value={p} onChange={e => handlePriceChange(e.target.value)} style={inputStyle} />
+      <input placeholder="Preis (z.B. 5,50)" size={10} value={p} onChange={e => handlePriceChange(e.target.value)} style={inputStyle} />
       <button onClick={() => { 
         if(n && p && num) { 
           onAdd(day, { name: n, price: p, number: num }); 
