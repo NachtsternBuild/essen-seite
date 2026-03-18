@@ -756,7 +756,7 @@ export default function WeeklyMealPlanner() {
       	  <div style={{ ...cardStyle, border: "3px solid #ffc107", background: "none" }}>
         	<h3>⚙️ Wartungssarbeitensteuerung</h3>
         	<p style= {{ fontSize: "1.1em" }}> 
-        	Aktueller Status:
+        	Wartungarbeitenvorbereitung:
         	  <div style={{ color: data.maintenance_active ? "#28a745" : "#dc3545"}}>
           	  	  <b> {data.maintenance_active ? "● Aktiv" : "○ Inaktiv"}</b>
         	  </div>
@@ -891,43 +891,36 @@ function UserManagement({ users, onCreate, onDelete, onResetToken, onUpdateField
         <thead>
           <tr>
             <th>Name</th>
-            <th>Zusatz-Info</th>
             <th>Status</th>
+            <th>Zusatz-Info</th>
             <th>Aktion</th>
           </tr>
         </thead>
         <tbody>
           {users.map((u: User) => (
             <tr key={u.id}>
-              <td>{u.name}</td>
-              {/* display additional information */}
-              <td> 
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-    			<span style={{ color: "#666", fontStyle: "italic" }}>
-      			  {u.info || "-"}
-    			</span>
-              
-              	{/* only superusers can see the Edit button for the info field */}
-    			{currentSuperuser && (
-      			  <button 
-        			onClick={() => {
-          			const newInfo = prompt(`Neue Zusatzinfo für ${u.name} (z.B. Büro):`, u.info || "");
-          			if (newInfo !== null) onUpdateField(u.id, "info", newInfo);
-        			}}
-        			style={{ 
-          			background: "none", 
-          			border: "3px dashed #007bff", 
-          			cursor: "pointer", 
-          			color: "#007bff",
-          			padding: "2px 5px",
-          			marginLeft: "15px"
-        			}}>
-        			  Ändern
-      				</button>
-    			  )}
-              </div>
+              <td>
+                {u.name}
               </td>
-              <td>{u.is_superuser ? "Superuser" : u.is_admin ? "Admin" : "User"}</td>
+              
+              <td>
+      			{/* User Status Info*/}
+      			<label style={{ cursor: currentSuperuser ? "pointer" : "default" }}>
+        		  <input 
+          		    type="checkbox" 
+          		    checked={u.is_admin} 
+          		    disabled={!currentSuperuser || u.is_superuser}
+          		    onChange={(e) => {
+            		  if (currentSuperuser) {
+              		    onUpdateField(u.id, "is_admin", e.target.checked);
+            		  }
+          		    }}
+        		  /> 
+        		    {u.is_admin ? " Admin" : " Nutzer"}
+      			</label>
+      			{u.is_superuser && <span style={{ marginLeft: "5px", color: "#007bff" }}>(Superuser)</span>}
+    		  </td>
+                           
               <td>
                 <div style={{ display: "flex", gap: "10px" }}>
                   
@@ -945,6 +938,34 @@ function UserManagement({ users, onCreate, onDelete, onResetToken, onUpdateField
                       }}
                       style={{ ...smallDeleteBtn, borderColor: "#007bff", color: "#007bff" }}>Token Reset</button>
                   )}
+                </div>
+              </td>
+              
+              <td> 
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+    			  <span style={{ color: "#666", fontStyle: "italic" }}>
+      			    {u.info || "-"}
+    			  </span>
+              
+              	  {/* only superusers can see the 'Ändern' button for the info field */}
+    			  {currentSuperuser && (
+      			    <button 
+        			  onClick={() => {
+          			  const newInfo = prompt(`Neue Zusatzinfo für ${u.name} (z.B. Büro):`, u.info || "");
+          			  if (newInfo !== null) onUpdateField(u.id, "info", newInfo);
+        			  }}
+        			  style={{ 
+          			  background: "none", 
+          			  border: "2px dashed #007bff", 
+          			  cursor: "pointer", 
+          			  color: "#007bff",
+          			  padding: "7px",
+          			  marginLeft: "15px",
+          			  fontSize: "0.9em"
+        			  }}>
+        			    Ändern
+      				</button>
+    			  )}
                 </div>
               </td>
             </tr>
