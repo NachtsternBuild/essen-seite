@@ -39,6 +39,7 @@ interface User {
   name: string;
   is_admin: boolean;
   is_superuser?: boolean;
+  info?: string;
 }
 
 // generate hash token
@@ -291,7 +292,7 @@ export default function WeeklyMealPlanner() {
   };
 
   // function to create a user
-  const createUser = async (u: { name: string, token: string, is_admin: boolean }) => {
+  const createUser = async (u: { name: string, token: string, is_admin: boolean, info?: string }) => {
     if (!checkAuth(undefined, 'admin')) return;
     try {
       // hash the token
@@ -300,7 +301,8 @@ export default function WeeklyMealPlanner() {
       await pb.collection(USER_COLLECTION).create({
         name: u.name,
         token_hash: secureHash,
-        is_admin: u.is_admin
+        is_admin: u.is_admin,
+        info: u.info
       });
     
       await fetchUsers();
@@ -472,7 +474,7 @@ export default function WeeklyMealPlanner() {
     document.body.removeChild(link);
   };
   
-  // Wartungs-Berechnung
+  // create maintenance infos 
   const maintenanceInfo = useMemo(() => {
     if (!data.maintenance_active || !data.maintenance_start) return null;
     const start = new Date(data.maintenance_start);
@@ -485,7 +487,7 @@ export default function WeeklyMealPlanner() {
     };
   }, [data.maintenance_active, data.maintenance_start, data.maintenance_duration]);
 
-  // Hilfsfunktion zum Speichern der Wartung (nur Superuser)
+  // function to save the maintenance infos
   const updateMaintenance = (active: boolean, start?: string, duration?: string) => {
     setData(prev => ({
       ...prev,
@@ -493,6 +495,19 @@ export default function WeeklyMealPlanner() {
       maintenance_start: start ?? prev.maintenance_start,
       maintenance_duration: duration ?? prev.maintenance_duration
     }));
+  };
+  
+  // function additional infos
+  const updateUserField = async (userId: string | undefined, field: string, value: any) => {
+    if (!userId) return;
+    if (!checkAuth(undefined, 'superuser')) return; 
+
+    try {
+      await pb.collection(USER_COLLECTION).update(userId, { [field]: value });
+      await fetchUsers(); // reload user list
+    } catch (e) {
+      alert("Fehler beim Aktualisieren der Benutzerdaten.");
+    } 
   };
   
   // calculate user bill
@@ -556,11 +571,13 @@ export default function WeeklyMealPlanner() {
         		  {!isArchive && !dayIsLocked && (person === currentUser?.name || currentUser?.is_admin) && (
           		    <button onClick={() => removeSingleOrder(person, day)} style={textBtnStyle}>✕</button>
         		  )}
-        
         		  <span>
-          			{person}: <b>#{order.number}</b> {order.name} 
-          			{order.edited && <span style={{ marginLeft: "5px" }}> (geändert)</span>}
-        		  </span>
+  					{person} {allUsers.find(u => u.name === person)?.info && 
+    				<small style={{ color: "#666" }}> 
+    				  ({allUsers.find(u => u.name === person)?.info})
+    				</small>
+  					}: <b>#{order.number}</b> {order.name}
+				  </span>
       			</div>
     		  );
   			})}
@@ -592,10 +609,12 @@ export default function WeeklyMealPlanner() {
   		  textAlign: "left", 
   		  borderCollapse: "separate",
   		  borderSpacing: "0 5px" }}>
-          <thead><tr><th>Name</th><th>Anzahl</th><th>Summe</th><th></th></tr></thead>
+          <thead><tr><th>Name</th><th>Info</th><th>Anzahl</th><th>Summe</th><th></th></tr></thead>
           <tbody>
             {Object.entries(weekData.orders).map(([person, userOrders]) => {
   			  const hasBeenEdited = Object.values(userOrders).some(m => m.edited === true);
+  			  // get the extra user info
+        	  const userDetail = allUsers.find(u => u.name === person);
 
   			  return (
   			    <tr key={person}>
@@ -609,6 +628,18 @@ export default function WeeklyMealPlanner() {
             		borderLeft: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)" }}>
         			{person} {hasBeenEdited && <small>(geändert)</small>}
       			  </td>
+      			  
+            	  <td style={{ 
+                	padding: "15px", 
+                	backgroundColor: "var(--card-bg)",
+                	color: "#666",
+                	fontSize: "0.9em",
+                	borderTop: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)",
+                	borderBottom: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)" 
+            	  }}>
+              		{userDetail?.info || "-"}
+            	  </td>
+      			  
       			  <td style={{ 
             		padding: "15px", 
             		backgroundColor: "var(--card-bg)",
@@ -616,6 +647,7 @@ export default function WeeklyMealPlanner() {
             		borderBottom: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)" }}>
       			    {Object.keys(userOrders).length}x
       			  </td>
+      			  
       			  <td style={{ 
             		padding: "15px", 
             		backgroundColor: "var(--card-bg)",
@@ -626,6 +658,7 @@ export default function WeeklyMealPlanner() {
             		borderRight: hasBeenEdited ? "3px solid #ffc107" : "3px solid var(--border-color)" }}>
       			    <b>{calculateUserTotal(userOrders).toFixed(2)} €</b>
       			  </td>
+      			  
       			  <td style={{ 
       				textAlign: "right", 
       				paddingLeft: "15px", 
@@ -642,13 +675,14 @@ export default function WeeklyMealPlanner() {
           {/* full total */}
           <tfoot style={{ borderTop: "2px solid #333" }}>
       		<tr>
-        	  <td style={{ paddingTop: "20px" }}><strong>GESAMTSUMME: </strong></td>
-        	  <td style={{ paddingTop: "20px" }}>
+        	  <td style={{ paddingTop: "20px", fontSize: "1.15em" }}><strong>GESAMTSUMME: </strong></td>
+        	  <td style={{ paddingTop: "20px", fontSize: "1.15em" }}><strong>  </strong></td>
+        	  <td style={{ paddingTop: "20px", fontSize: "1.15em" }}>
           	    <strong>
                 {Object.values(weekData.orders).reduce((total, orders) => total + Object.keys(orders).length, 0)}x
            	    </strong>
         	  </td>
-        	  <td style={{ paddingTop: "20px" }}>
+        	  <td style={{ paddingTop: "20px", fontSize: "1.15em" }}>
           	    <strong style={{ color: "#28a745" }}>
                 {Object.values(weekData.orders)
                   .reduce((total, orders) => total + calculateUserTotal(orders), 0)
@@ -720,7 +754,7 @@ export default function WeeklyMealPlanner() {
         {/* superuser maintenance panel */}
     	{currentUser.is_superuser && (
       	  <div style={{ ...cardStyle, border: "3px solid #ffc107", background: "none" }}>
-        	<h3>⚙️ Wartungs-Systemsteuerung</h3>
+        	<h3>⚙️ Wartungssarbeitensteuerung</h3>
         	<p style= {{ fontSize: "1.1em" }}> 
         	Aktueller Status:
         	  <div style={{ color: data.maintenance_active ? "#28a745" : "#dc3545"}}>
@@ -754,7 +788,8 @@ export default function WeeklyMealPlanner() {
     	  users={allUsers} 
    		  onCreate={createUser} 
     	  onDelete={deleteUserRecord} 
-    	  onResetToken={resetUserToken} 
+    	  onResetToken={resetUserToken}
+    	  onUpdateField={updateUserField} 
     	  currentSuperuser={currentUser?.is_superuser}
   		  />
   		</> 
@@ -822,15 +857,17 @@ function OrderForm({ days, onOrder, currentUser, allMeals = {} }: any) {
 }
 
 // layout for user management
-function UserManagement({ users, onCreate, onDelete, onResetToken, currentSuperuser }: {
+function UserManagement({ users, onCreate, onDelete, onResetToken, onUpdateField, currentSuperuser }: {
   users: User[],
   onCreate: (u: any) => void,
   onDelete: (id: string) => void,
   onResetToken: (id: string | undefined, token: string) => void,
+  onUpdateField: (userId: string | undefined, field: string, value: any) => void, // Hinzugefügt
   currentSuperuser: boolean | undefined
 }) {
   const [name, setName] = useState("");
   const [token, setToken] = useState("");
+  const [info, setInfo] = useState(""); // Neuer State für Zusatz-Info
   const [adm, setAdm] = useState(false);
   
   return (
@@ -839,24 +876,58 @@ function UserManagement({ users, onCreate, onDelete, onResetToken, currentSuperu
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
         <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
         <input placeholder="Passwort" value={token} onChange={e => setToken(e.target.value)} style={inputStyle} />
+        <input placeholder="Zusatzinfos (z.B. Büro/Amt)" value={info} onChange={e => setInfo(e.target.value)} style={inputStyle} />
+        
         <label><input type="checkbox" checked={adm} onChange={e => setAdm(e.target.checked)} /> Admin</label>
-		<button onClick={() => { 
-			onCreate({ name, token: token, is_admin: adm });
-  			setName(""); setToken(""); setAdm(false); 
-			}} style={greenBtn}>Hinzufügen</button>
+        
+        <button onClick={() => { 
+            // information on creation field
+            onCreate({ name, token: token, is_admin: adm, info: info });
+            setName(""); setToken(""); setAdm(false); setInfo(""); 
+          }} style={greenBtn}>Hinzufügen</button>
       </div>
+
       <table style={{ width: "100%", textAlign: "left" }}>
-        <thead><tr><th>Name</th><th>Status</th><th>Aktion</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Zusatz-Info</th>
+            <th>Status</th>
+            <th>Aktion</th>
+          </tr>
+        </thead>
         <tbody>
           {users.map((u: User) => (
             <tr key={u.id}>
-              <td>
-                {u.name} 
-
+              <td>{u.name}</td>
+              {/* display additional information */}
+              <td> 
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+    			<span style={{ color: "#666", fontStyle: "italic" }}>
+      			  {u.info || "-"}
+    			</span>
+              
+              	{/* only superusers can see the Edit button for the info field */}
+    			{currentSuperuser && (
+      			  <button 
+        			onClick={() => {
+          			const newInfo = prompt(`Neue Zusatzinfo für ${u.name} (z.B. Büro):`, u.info || "");
+          			if (newInfo !== null) onUpdateField(u.id, "info", newInfo);
+        			}}
+        			style={{ 
+          			background: "none", 
+          			border: "3px dashed #007bff", 
+          			cursor: "pointer", 
+          			color: "#007bff",
+          			padding: "2px 5px",
+          			marginLeft: "15px"
+        			}}>
+        			  Ändern
+      				</button>
+    			  )}
+              </div>
               </td>
-              <td>
-                {u.is_superuser ? "Superuser" : u.is_admin ? "Admin" : "User"}
-              </td>
+              <td>{u.is_superuser ? "Superuser" : u.is_admin ? "Admin" : "User"}</td>
               <td>
                 <div style={{ display: "flex", gap: "10px" }}>
                   
@@ -891,7 +962,7 @@ function AddMealForm({ day, onAdd }: { day: string, onAdd: (day: string, meal: M
   const [num, setNum] = useState("");
 
   const handlePriceChange = (val: string) => {
-    // Erlaubt nur Zahlen, einen Punkt oder ein Komma
+    // allow only numbers from 0-9 '.' ','
     const regex = /^[0-9]*[.,]?[0-9]*$/;
     if (val === "" || regex.test(val)) {
       setP(val);
