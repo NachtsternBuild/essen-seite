@@ -1,0 +1,84 @@
+/* ─── Buttons ────────────────────────────────────────────────────────────────── */
+.btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background .12s, opacity .12s, transform .08s;
+  white-space: nowrap;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn:not(:disabled):active { transform: scale(.97); }
+
+/* Variants */
+.btn--primary  { background: var(--color-info);    color: #fff; }
+.btn--success  { background: var(--color-success); color: #fff; }
+.btn--danger   { background: var(--color-danger);  color: #fff; }
+.btn--warning  { background: var(--color-warning); color: #fff; }
+
+.btn--ghost {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+}
+
+.btn--ghost:not(:disabled):hover { background: var(--border); }
+
+.btn--primary:not(:disabled):hover  { background: #1d4ed8; }
+.btn--success:not(:disabled):hover  { background: #15803d; }
+.btn--danger:not(:disabled):hover   { background: #b91c1c; }
+.btn--warning:not(:disabled):hover  { background: #b45309; }
+
+.btn--danger-outline {
+  color: var(--color-danger);
+  border: 1.5px solid var(--color-danger);
+  background: transparent;
+}
+.btn--danger-outline:not(:disabled):hover {
+  background: rgba(220,38,38,.08);
+}
+
+/* Sizes */
+.btn--sm { padding: 6px 12px; font-size: 0.9rem; }
+.btn--xs { padding: 4px 8px;  font-size: 0.82rem; }
+.btn--lg { padding: 12px 22px; font-size: 1.1rem; }
+.btn--full { width: 100%; }
+
+/* Icon button */
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 5px;
+  font-size: 1rem;
+  line-height: 1;
+  transition: background .1s;
+  color: var(--text);
+}
+
+.btn-icon:hover    { background: var(--border); }
+.btn-icon--danger  { color: var(--color-danger); }
+.btn-icon--danger:hover { background: rgba(220,38,38,.1); }
+.btn-icon--active  { background: var(--accent-light); color: var(--accent); }
+
+/* Theme toggle */
+.theme-toggle {
+  font-size: 1.1rem;
+  padding: 4px 7px;
+}

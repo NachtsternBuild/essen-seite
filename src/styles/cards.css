@@ -1,0 +1,282 @@
+/* ─── Base card ──────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.card-header__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.card__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+/* ─── Meal card ──────────────────────────────────────────────────────────────── */
+.meal-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color .15s;
+}
+
+.meal-card:hover { border-color: var(--border-strong); }
+
+.meal-card--locked {
+  opacity: .65;
+  border-style: dashed;
+}
+
+.meal-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.meal-card__day {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meal-card__lock { font-size: 1rem; }
+
+.meal-card__badge {
+  font-family: var(--font-secondary);
+  font-size: 0.72rem;
+  background: var(--accent-light);
+  color: var(--accent);
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.meal-card__section-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-family: var(--font-secondary);
+}
+
+.meal-card__menu  { margin-bottom: 12px; }
+.meal-card__empty { color: var(--text-muted); font-size: 0.95rem; font-style: italic; }
+
+/* ─── Menu item ──────────────────────────────────────────────────────────────── */
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.menu-item:last-of-type { border-bottom: none; }
+
+.menu-item__info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.menu-item__number {
+  font-family: var(--font-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.menu-item__name {
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  flex: 1;
+}
+
+.menu-item__price {
+  font-family: var(--font-secondary);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ─── Diet badges ────────────────────────────────────────────────────────────── */
+.diet-badge {
+  font-size: 0.9rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.diet-badge--vegan { background: rgba(22,163,74,.1); }
+.diet-badge--veg   { background: rgba(101,163,13,.1); }
+
+.allergen-indicator {
+  font-family: var(--font-secondary);
+  font-size: 0.72rem;
+  color: var(--color-warning);
+  white-space: nowrap;
+  cursor: help;
+}
+
+/* ─── Summary badges ─────────────────────────────────────────────────────────── */
+.meal-card__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.summary-badge {
+  font-family: var(--font-secondary);
+  font-size: 0.82rem;
+  background: none;
+  color: var(--color-danger);
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1.5px solid var(--color-danger);
+}
+
+/* ─── Order rows ─────────────────────────────────────────────────────────────── */
+.meal-card__orders { margin-top: 10px; }
+
+.order-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 7px;
+  flex-wrap: wrap;
+}
+
+.order-row--edited {
+  border: 1.5px solid var(--color-warning);
+  background: rgba(217,119,6,.05);
+}
+
+.order-row__person { font-weight: 600; font-size: 0.95rem; }
+.order-row__info   { color: var(--text-muted); font-size: 0.85rem; }
+.order-row__meal   { font-size: 0.95rem; color: var(--text); }
+
+.order-row__edited-tag {
+  font-family: var(--font-secondary);
+  font-size: 0.78rem;
+  background: var(--color-warning);
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+/* ─── Group card ─────────────────────────────────────────────────────────────── */
+.group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.group-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .15s;
+}
+
+.group-card:hover { box-shadow: var(--shadow-md); }
+
+.group-card--archived { opacity: .65; }
+
+.group-card__color-bar {
+  height: 4px;
+  background: var(--group-color, var(--accent));
+}
+
+.group-card__body { padding: 16px; }
+
+.group-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.group-card__name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.group-card__desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.group-card__linked {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-family: var(--font-secondary);
+  margin-bottom: 10px;
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  border-left: 2px solid var(--group-color, var(--accent));
+}
+
+.group-card__stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 12px;
+}
+
+.group-stat {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-family: var(--font-secondary);
+}
+
+.group-card__actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}

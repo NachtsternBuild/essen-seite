@@ -1,29 +1,40 @@
+import { useToastContext } from '../context/ToastContext';
 import type { Toast } from '../types';
-
-interface ToastContainerProps {
-  toasts: Toast[];
-  onRemove: (id: string) => void;
-}
 
 const ICONS: Record<Toast['type'], string> = {
   success: '✓',
   error: '✕',
-  info: 'ℹ',
   warning: '⚠',
+  info: 'ℹ',
 };
 
-export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
+export function ToastContainer() {
+  const { toasts, removeToast } = useToastContext();
+
   if (toasts.length === 0) return null;
+
   return (
-    <div className="toast-container" role="region" aria-label="Benachrichtigungen">
+    <div
+      className="toast-container"
+      role="region"
+      aria-label="Benachrichtigungen"
+      aria-live="polite"
+    >
       {toasts.map(toast => (
-        <div key={toast.id} className={`toast toast--${toast.type}`}>
-          <span className="toast__icon">{ICONS[toast.type]}</span>
+        <div
+          key={toast.id}
+          className={`toast toast--${toast.type}`}
+          role="alert"
+          aria-atomic="true"
+        >
+          <span className="toast__icon" aria-hidden="true">
+            {ICONS[toast.type]}
+          </span>
           <span className="toast__message">{toast.message}</span>
           <button
             className="toast__close"
-            onClick={() => onRemove(toast.id)}
-            aria-label="Schließen"
+            onClick={() => removeToast(toast.id)}
+            aria-label="Benachrichtigung schließen"
           >
             ✕
           </button>

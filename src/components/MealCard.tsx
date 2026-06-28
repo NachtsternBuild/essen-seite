@@ -1,21 +1,23 @@
+import { memo } from 'react';
 import { isLocked } from '../lib/utils';
 import { AddMealForm } from './AddMealForm';
-import type { Meal, Orders, AuthUser } from '../types';
+import type { MealItem, AuthUser, OrdersByUser } from '../types';
+import { ALLERGENS } from '../types';
 
 interface MealCardProps {
   day: string;
-  meals: Meal[];
-  orders: Orders;
+  meals: MealItem[];
+  orders: OrdersByUser;
   allUsers: AuthUser[];
   currentUser: AuthUser | null;
   isArchive: boolean;
   isUpcomingView: boolean;
   onRemoveMeal?: (day: string, index: number) => void;
-  onRemoveOrder: (person: string, day: string) => void;
-  onAddMeal?: (day: string, meal: Meal) => void;
+  onRemoveOrder: (orderId: string, person: string, day: string) => void;
+  onAddMeal?: (day: string, meal: MealItem) => void;
 }
 
-export function MealCard({
+export const MealCard = memo(function MealCard({
   day,
   meals,
   orders,
@@ -29,10 +31,10 @@ export function MealCard({
 }: MealCardProps) {
   const dayLocked = isUpcomingView ? false : isLocked(day);
 
-  // count per meal number for the summary badges
   const summary: Record<string, number> = {};
-  Object.values(orders).forEach(o => {
-    if (o[day]) summary[o[day].number] = (summary[o[day].number] || 0) + 1;
+  Object.values(orders).forEach(dayMap => {
+    const o = dayMap[day];
+    if (o) summary[o.meal_number] = (summary[o.meal_number] || 0) + 1;
   });
 
   const sortedMeals = [...meals].sort(
@@ -40,10 +42,10 @@ export function MealCard({
   );
 
   const dayOrders = Object.entries(orders)
-    .map(([person, days]) => ({ person, order: days[day] }))
+    .map(([person, dayMap]) => ({ person, order: dayMap[day] }))
     .filter(({ order }) => !!order);
 
-  const orderedCount = dayOrders.length;
+  const existingNumbers = meals.map(m => m.number);
 
   return (
     <div className={`meal-card${dayLocked && !isArchive ? ' meal-card--locked' : ''}`}>
@@ -51,10 +53,16 @@ export function MealCard({
       <div className="meal-card__header">
         <h3 className="meal-card__day">
           {day}
-          {dayLocked && !isArchive && <span className="meal-card__lock" title="Bestellschluss überschritten">🔒</span>}
+          {dayLocked && !isArchive && (
+            <span className="meal-card__lock" title="Bestellschluss überschritten">
+              🔒
+            </span>
+          )}
         </h3>
-        {orderedCount > 0 && (
-          <span className="meal-card__badge">{orderedCount} Bestellung{orderedCount !== 1 ? 'en' : ''}</span>
+        {dayOrders.length > 0 && (
+          <span className="meal-card__badge">
+            {dayOrders.length} Bestellung{dayOrders.length !== 1 ? 'en' : ''}
+          </span>
         )}
       </div>
 
@@ -65,17 +73,36 @@ export function MealCard({
           <p className="meal-card__empty">Noch kein Menü eingetragen</p>
         ) : (
           sortedMeals.map((m, i) => (
-            <div key={i} className="menu-item">
+            <div key={`${m.number}-${i}`} className="menu-item">
               <div className="menu-item__info">
                 <span className="menu-item__number">#{m.number}</span>
                 <span className="menu-item__name">{m.name}</span>
-                <span className="menu-item__price">{m.price} €</span>
+                <span className="menu-item__price">
+                  {typeof m.price === 'number' ? m.price.toFixed(2).replace('.', ',') : m.price} €
+                </span>
+                {(m.vegan || m.vegetarian) && (
+                  <span
+                    className={`diet-badge${m.vegan ? ' diet-badge--vegan' : ' diet-badge--veg'}`}
+                    title={m.vegan ? 'Vegan' : 'Vegetarisch'}
+                  >
+                    {m.vegan ? '🌱' : '🥦'}
+                  </span>
+                )}
+                {m.allergens && m.allergens.length > 0 && (
+                  <span
+                    className="allergen-indicator"
+                    title={m.allergens.map(a => `${a}: ${ALLERGENS[a] ?? a}`).join(', ')}
+                  >
+                    ⚠️ {m.allergens.join(',')}
+                  </span>
+                )}
               </div>
               {!isArchive && currentUser?.is_admin && !dayLocked && (
                 <button
                   className="btn-icon btn-icon--danger"
                   onClick={() => onRemoveMeal?.(day, i)}
                   title="Menü entfernen"
+                  aria-label={`Menü #${m.number} entfernen`}
                 >
                   ✕
                 </button>
@@ -88,11 +115,13 @@ export function MealCard({
       {/* ── Summary badges ── */}
       {Object.keys(summary).length > 0 && (
         <div className="meal-card__summary">
-          {Object.entries(summary).sort().map(([num, count]) => (
-            <span key={num} className="summary-badge">
-              {count}× Menü #{num}
-            </span>
-          ))}
+          {Object.entries(summary)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([num, count]) => (
+              <span key={num} className="summary-badge">
+                {count}× #{num}
+              </span>
+            ))}
         </div>
       )}
 
@@ -101,30 +130,39 @@ export function MealCard({
         <div className="meal-card__orders">
           <span className="meal-card__section-label">Bestellungen</span>
           {dayOrders.map(({ person, order }) => {
+            if (!order) return null;
             const userInfo = allUsers.find(u => u.name === person)?.info;
             const canRemove =
               !isArchive &&
               !dayLocked &&
-              (person === currentUser?.name || currentUser?.is_admin);
+              (person === currentUser?.name || currentUser?.is_admin || currentUser?.is_superuser);
             return (
-              <div key={person} className={`order-row${order.edited ? ' order-row--edited' : ''}`}>
+              <div
+                key={person}
+                className={`order-row${order.edited ? ' order-row--edited' : ''}`}
+              >
                 {canRemove && (
                   <button
                     className="btn-icon btn-icon--danger"
-                    onClick={() => onRemoveOrder(person, day)}
+                    onClick={() => onRemoveOrder(order.id, person, day)}
                     title="Bestellung entfernen"
+                    aria-label={`Bestellung von ${person} für ${day} entfernen`}
                   >
                     ✕
                   </button>
                 )}
                 <span className="order-row__person">
                   {person}
-                  {userInfo && <small className="order-row__info"> ({userInfo})</small>}
+                  {userInfo && (
+                    <small className="order-row__info"> ({userInfo})</small>
+                  )}
                 </span>
                 <span className="order-row__meal">
-                  <strong>#{order.number}</strong> {order.name}
+                  <strong>#{order.meal_number}</strong> {order.meal_name}
                 </span>
-                {order.edited && <span className="order-row__edited-tag">geändert</span>}
+                {order.edited && (
+                  <span className="order-row__edited-tag">geändert</span>
+                )}
               </div>
             );
           })}
@@ -133,8 +171,12 @@ export function MealCard({
 
       {/* ── Add meal form (admin only) ── */}
       {!isArchive && currentUser?.is_admin && !dayLocked && onAddMeal && (
-        <AddMealForm day={day} onAdd={onAddMeal} />
+        <AddMealForm
+          day={day}
+          existingNumbers={existingNumbers}
+          onAdd={onAddMeal}
+        />
       )}
     </div>
   );
-}
+});
