@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { MaintenanceSettings } from '../types';
 
 interface MaintenancePanelProps {
@@ -6,7 +7,36 @@ interface MaintenancePanelProps {
 }
 
 export function MaintenancePanel({ settings, onChange }: MaintenancePanelProps) {
-  const { active, start_time, duration, message } = settings;
+  const { active, start_time } = settings;
+
+  // Local state for text fields – only saved on blur, not on every keystroke
+  const [localDuration, setLocalDuration] = useState(settings.duration ?? '');
+  const [localMessage, setLocalMessage] = useState(settings.message ?? '');
+
+  // Sync when settings load from DB
+  useEffect(() => {
+    setLocalDuration(settings.duration ?? '');
+    setLocalMessage(settings.message ?? '');
+  }, [settings.duration, settings.message]);
+
+  const handleDurationBlur = () => {
+    let val = localDuration.trim();
+    // Auto-append "Stunden" if the value is a plain number
+    if (val && /^\d+([.,]\d+)?$/.test(val)) {
+      val = val + ' Stunden';
+      setLocalDuration(val);
+    }
+    if (val !== (settings.duration ?? '')) {
+      onChange({ ...settings, duration: val });
+    }
+  };
+
+  const handleMessageBlur = () => {
+    const val = localMessage.trim();
+    if (val !== (settings.message ?? '')) {
+      onChange({ ...settings, message: val });
+    }
+  };
 
   return (
     <div className="card maintenance-panel">
@@ -30,9 +60,7 @@ export function MaintenancePanel({ settings, onChange }: MaintenancePanelProps) 
             className="form-input"
             type="datetime-local"
             value={start_time}
-            onChange={e =>
-              onChange({ ...settings, start_time: e.target.value })
-            }
+            onChange={e => onChange({ ...settings, start_time: e.target.value })}
           />
         </div>
 
@@ -45,10 +73,9 @@ export function MaintenancePanel({ settings, onChange }: MaintenancePanelProps) 
             className="form-input"
             type="text"
             placeholder="z.B. 2 Stunden"
-            value={duration}
-            onChange={e =>
-              onChange({ ...settings, duration: e.target.value })
-            }
+            value={localDuration}
+            onChange={e => setLocalDuration(e.target.value)}
+            onBlur={handleDurationBlur}
             maxLength={50}
           />
         </div>
@@ -62,10 +89,9 @@ export function MaintenancePanel({ settings, onChange }: MaintenancePanelProps) 
             className="form-input"
             type="text"
             placeholder="Info für Nutzer …"
-            value={message ?? ''}
-            onChange={e =>
-              onChange({ ...settings, message: e.target.value })
-            }
+            value={localMessage}
+            onChange={e => setLocalMessage(e.target.value)}
+            onBlur={handleMessageBlur}
             maxLength={200}
           />
         </div>
@@ -75,9 +101,13 @@ export function MaintenancePanel({ settings, onChange }: MaintenancePanelProps) 
             type="checkbox"
             className="maintenance-toggle__input"
             checked={active}
-            onChange={e =>
-              onChange({ ...settings, active: e.target.checked })
-            }
+            onChange={e => {
+              if (e.target.checked) {
+                onChange({ ...settings, active: true });
+              } else {
+                onChange({ ...settings, active: false, start_time: '', duration: '', message: '' });
+              }
+            }}
             aria-label="Wartungsmodus aktivieren"
           />
           <span className="maintenance-toggle__track">

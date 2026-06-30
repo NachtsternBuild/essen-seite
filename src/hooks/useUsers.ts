@@ -64,7 +64,7 @@ export function useUsers(currentUser: AuthUser | null) {
       }
       try {
         await userService.updateGroupId(userId, groupId);
-        if (currentUser?.is_superuser && groupId) {
+        if ((currentUser?.is_superuser || currentUser?.is_admin) && groupId) {
           await groupService.moveMember(userId, groupId);
         }
         await refresh();
@@ -131,15 +131,13 @@ export function useUsers(currentUser: AuthUser | null) {
   );
 
   const resetPassword = useCallback(
-    async (id: string, name: string): Promise<void> => {
+    async (id: string, name: string, newPassword: string): Promise<void> => {
       if (!currentUser?.is_superuser) {
         addToast('Nur Superuser dürfen Passwörter zurücksetzen.', 'error');
         return;
       }
-      const newPw = prompt(`Neues Passwort für ${name}:`);
-      if (!newPw) return;
       try {
-        await userService.resetPassword(id, newPw);
+        await userService.resetPassword(id, newPassword);
         addToast(`Passwort für ${name} zurückgesetzt.`, 'success');
       } catch {
         addToast('Fehler beim Zurücksetzen.', 'error');

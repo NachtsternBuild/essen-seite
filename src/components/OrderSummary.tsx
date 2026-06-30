@@ -4,7 +4,6 @@ import {
   exportTXT,
   exportCSV,
   exportPDF,
-  exportXLSX,
   exportJSON,
   exportKitchenPrint,
 } from '../services/exportService';
@@ -73,7 +72,6 @@ export const OrderSummary = memo(function OrderSummary({
         case 'txt': exportTXT(weekData as never, label); break;
         case 'csv': exportCSV(weekData as never, label); break;
         case 'pdf': await exportPDF(weekData as never, label); break;
-        case 'xlsx': await exportXLSX(weekData as never, label); break;
         case 'json': exportJSON(weekData as never, label); break;
         case 'kitchen': exportKitchenPrint(weekData as never, label); break;
       }
@@ -88,7 +86,6 @@ export const OrderSummary = memo(function OrderSummary({
         <div className="order-summary__exports">
           <button className="btn btn--ghost btn--sm" onClick={() => handleExport('txt')} title="TXT exportieren">📄 TXT</button>
           <button className="btn btn--ghost btn--sm" onClick={() => handleExport('csv')} title="CSV exportieren">📊 CSV</button>
-          <button className="btn btn--ghost btn--sm" onClick={() => handleExport('xlsx')} title="Excel exportieren">📗 Excel</button>
           <button className="btn btn--danger btn--sm" onClick={() => handleExport('pdf')} title="PDF exportieren">📋 PDF</button>
           <button className="btn btn--ghost btn--sm" onClick={() => handleExport('json')} title="JSON-Backup">💾 JSON</button>
           <button className="btn btn--ghost btn--sm" onClick={() => handleExport('kitchen')} title="Küchenzettel">🍳 Küche</button>

@@ -5,14 +5,13 @@ import type { MealItem } from '../types';
 
 interface AddMealFormProps {
   day: string;
-  existingNumbers?: string[];
+  autoNumber: number;
   onAdd: (day: string, meal: MealItem) => void;
 }
 
 const PRICE_REGEX = /^[0-9]*[.,]?[0-9]*$/;
 
-export function AddMealForm({ day, existingNumbers = [], onAdd }: AddMealFormProps) {
-  const [num, setNum] = useState('');
+export function AddMealForm({ day, autoNumber, onAdd }: AddMealFormProps) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [vegetarian, setVegetarian] = useState(false);
@@ -34,7 +33,7 @@ export function AddMealForm({ day, existingNumbers = [], onAdd }: AddMealFormPro
   const handleAdd = () => {
     const priceNum = parseFloat(price.replace(',', '.'));
     const result = mealItemSchema.safeParse({
-      number: num,
+      number: String(autoNumber),
       name,
       price: priceNum,
       vegetarian,
@@ -51,14 +50,8 @@ export function AddMealForm({ day, existingNumbers = [], onAdd }: AddMealFormPro
       return;
     }
 
-    if (existingNumbers.includes(num)) {
-      setErrors({ number: `Menünummer #${num} existiert bereits für ${day}.` });
-      return;
-    }
-
     setErrors({});
     onAdd(day, result.data);
-    setNum('');
     setName('');
     setPrice('');
     setVegetarian(false);
@@ -74,18 +67,9 @@ export function AddMealForm({ day, existingNumbers = [], onAdd }: AddMealFormPro
   return (
     <div className="add-meal-form">
       <div className="add-meal-form__row">
-        <input
-          className={`form-input form-input--sm${errors.number ? ' form-input--error' : ''}`}
-          type="text"
-          inputMode="numeric"
-          placeholder="Nr."
-          value={num}
-          onChange={e => setNum(e.target.value)}
-          onKeyDown={handleKeyDown}
-          style={{ width: '60px' }}
-          aria-label="Menünummer"
-          aria-describedby={errors.number ? 'am-num-err' : undefined}
-        />
+        <span className="add-meal-form__num-badge" aria-label={`Menünummer ${autoNumber}`}>
+          #{autoNumber}
+        </span>
         <input
           className={`form-input form-input--sm${errors.name ? ' form-input--error' : ''}`}
           placeholder="Gericht"
@@ -101,20 +85,26 @@ export function AddMealForm({ day, existingNumbers = [], onAdd }: AddMealFormPro
           value={price}
           onChange={e => handlePriceChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          style={{ width: '90px' }}
+          style={{ width: '120px' }}
           aria-label="Preis"
         />
         <div className="add-meal-form__flags">
-          <label className="diet-flag diet-flag--veg" title="Vegetarisch">
+          <label
+            className={`diet-flag diet-flag--veg${(vegetarian || vegan) ? ' diet-flag--active' : ''}`}
+            title={vegetarian || vegan ? 'Vegetarisch (aktiv – klicken zum Deaktivieren)' : 'Vegetarisch'}
+          >
             <input
               type="checkbox"
               checked={vegetarian || vegan}
-              onChange={e => setVegetarian(e.target.checked)}
+              onChange={e => { setVegetarian(e.target.checked); if (!e.target.checked) setVegan(false); }}
               aria-label="Vegetarisch"
             />
             🥦
           </label>
-          <label className="diet-flag diet-flag--vegan" title="Vegan">
+          <label
+            className={`diet-flag diet-flag--vegan${vegan ? ' diet-flag--active' : ''}`}
+            title={vegan ? 'Vegan (aktiv – klicken zum Deaktivieren)' : 'Vegan'}
+          >
             <input
               type="checkbox"
               checked={vegan}
@@ -123,20 +113,27 @@ export function AddMealForm({ day, existingNumbers = [], onAdd }: AddMealFormPro
             />
             🌱
           </label>
-          <button
-            type="button"
-            className={`btn-icon${showAllergens ? ' btn-icon--active' : ''}`}
-            onClick={() => setShowAllergens(v => !v)}
-            title="Allergene"
-            aria-expanded={showAllergens}
-          >
-            ⚠️
-          </button>
+          <span className="allergen-toggle">
+            <button
+              type="button"
+              className={`btn-icon${showAllergens || selectedAllergens.length > 0 ? ' btn-icon--active' : ''}`}
+              onClick={() => setShowAllergens(v => !v)}
+              title={selectedAllergens.length > 0 ? `${selectedAllergens.length} Allergen(e) ausgewählt` : 'Allergene'}
+              aria-expanded={showAllergens}
+            >
+              ⚠️
+            </button>
+            {selectedAllergens.length > 0 && (
+              <span className="allergen-toggle__count" aria-hidden="true">
+                {selectedAllergens.length}
+              </span>
+            )}
+          </span>
         </div>
         <button
           className="btn btn--success btn--sm"
           onClick={handleAdd}
-          disabled={!num || !name || !price}
+          disabled={!name || !price}
           aria-label="Gericht hinzufügen"
         >
           + Hinzufügen

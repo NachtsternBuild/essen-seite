@@ -23,6 +23,7 @@ von der alten Einzel-Dokument-Architektur auf das Multi-Gruppen-System.
 8. [App-Konfiguration](#8-app-konfiguration)
 9. [Migration vom alten Schema](#9-migration-vom-alten-schema)
 10. [API-Rules Referenz](#10-api-rules-referenz)
+11. [Migrations-Checkliste für bestehende Installationen](#11-migrations-checkliste-für-bestehende-installationen)
 
 ---
 
@@ -84,11 +85,15 @@ Alle Collections werden unter:
 | `name`         | Text   | ✓        | Max length: `60`                                               |
 | `description`  | Text   | –        | Max length: `200`                                              |
 | `color`        | Text   | –        | –                                                              |
-| `archived`     | Bool   | –        | Default: `false`                                               |
 | `linked_group` | Text   | –        | Speichert die ID einer anderen Gruppe, deren Plan geteilt wird |
 
 > **Hinweis:** `linked_group` ist bewusst ein Text-Feld (keine Relation),
 > da PocketBase keine Selbstreferenzen in Relation-Feldern erlaubt.
+
+> **Kein `archived`-Feld:** Gruppen werden statt archiviert direkt gelöscht.
+> Beim Löschen werden automatisch alle Wochenpläne, alle Bestellungen und alle
+> Mitgliedschaften der Gruppe entfernt. Nutzer bleiben erhalten, werden aber
+> als "ohne Gruppe" gespeichert (`group_id` wird auf leer gesetzt).
 
 #### API Rules
 
@@ -96,11 +101,14 @@ Im Tab **„API Rules"** folgende Regeln eintragen:
 
 | Rule          | Wert |
 |---------------|------|
-| List rule     | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| @collection.group_memberships.user.id ?= @request.auth.id)` |
-| View rule     | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| @collection.group_memberships.user.id ?= @request.auth.id)` |
+| List rule     | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || @collection.group_memberships.user.id ?= @request.auth.id)` |
+| View rule     | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || @collection.group_memberships.user.id ?= @request.auth.id)` |
 | Create rule   | `@request.auth.id != "" && @request.auth.is_superuser = true` |
 | Update rule   | `@request.auth.id != "" && @request.auth.is_superuser = true` |
 | Delete rule   | `@request.auth.id != "" && @request.auth.is_superuser = true` |
+
+> **Warum `is_admin` in List/View?** Admins müssen alle Gruppen sehen können,
+> um Nutzer gruppenübergreifend zuweisen zu können.
 
 ---
 
@@ -120,11 +128,14 @@ Im Tab **„API Rules"** folgende Regeln eintragen:
 
 | Rule        | Wert |
 |-------------|------|
-| List rule   | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| user.id = @request.auth.id)` |
-| View rule   | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| user.id = @request.auth.id)` |
-| Create rule | `@request.auth.id != "" && @request.auth.is_superuser = true` |
-| Update rule | `@request.auth.id != "" && @request.auth.is_superuser = true` |
-| Delete rule | `@request.auth.id != "" && @request.auth.is_superuser = true` |
+| List rule   | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || user.id = @request.auth.id)` |
+| View rule   | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || user.id = @request.auth.id)` |
+| Create rule | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true)` |
+| Update rule | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true)` |
+| Delete rule | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true)` |
+
+> **Warum `is_admin`?** Admins müssen Mitgliedschaften lesen und verwalten können,
+> um Nutzer gruppenübergreifend zu verschieben.
 
 ---
 
@@ -155,9 +166,13 @@ Im Tab **„API Rules"** folgende Regeln eintragen:
 |-------------|------|
 | List rule   | `@request.auth.id != ""` |
 | View rule   | `@request.auth.id != ""` |
-| Create rule | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| @collection.group_memberships.group = group && @collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin")` |
-| Update rule | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| @collection.group_memberships.group = group && @collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin")` |
-| Delete rule | `@request.auth.id != "" && @request.auth.is_superuser = true` |
+| Create rule | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || @collection.group_memberships.group = group && @collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin")` |
+| Update rule | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || @collection.group_memberships.group = group && @collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin")` |
+| Delete rule | `@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true)` |
+
+> **Warum `is_admin`?** Nutzer mit `is_admin = true` sollen Wochenpläne anlegen,
+> bearbeiten und rotieren dürfen – auch wenn kein `group_memberships`-Eintrag
+> mit `role = "admin"` für diese Gruppe existiert.
 
 ---
 
@@ -188,11 +203,11 @@ Im Tab **„API Rules"** folgende Regeln eintragen:
 
 | Rule        | Wert |
 |-------------|------|
-| List rule   | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| group.memberships.user = @request.auth.id \|\| group = @request.auth.group_id)` |
-| View rule   | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| group.memberships.user = @request.auth.id \|\| group = @request.auth.group_id)` |
-| Create rule | `@request.auth.id != "" && (group.memberships.user = @request.auth.id \|\| group = @request.auth.group_id)` |
-| Update rule | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| user.id = @request.auth.id \|\| (group.memberships.user = @request.auth.id && group.memberships.role = "admin"))` |
-| Delete rule | `@request.auth.id != "" && (@request.auth.is_superuser = true \|\| user.id = @request.auth.id \|\| (group.memberships.user = @request.auth.id && group.memberships.role = "admin"))` |
+| List rule   | `@request.auth.id != "" && (@request.auth.is_superuser = true || @collection.group_memberships.user = @request.auth.id || group = @request.auth.group_id)` |
+| View rule   | `@request.auth.id != "" && (@request.auth.is_superuser = true || @collection.group_memberships.user = @request.auth.id || group = @request.auth.group_id)` |
+| Create rule | `@request.auth.id != "" && (@collection.group_memberships.user = @request.auth.id || group = @request.auth.group_id)` |
+| Update rule | `@request.auth.id != "" && (@request.auth.is_superuser = true || user.id = @request.auth.id || (@collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin"))` |
+| Delete rule | `@request.auth.id != "" && (@request.auth.is_superuser = true || user.id = @request.auth.id || (@collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin"))` |
 
 ---
 
@@ -218,11 +233,11 @@ Im Tab **„API Rules"** folgende Regeln eintragen:
 
 | Rule        | Wert |
 |-------------|------|
-| List rule   | `@request.auth.id != "" && (@request.auth.is_admin = true \|\| @request.auth.is_superuser = true)` |
-| View rule   | `@request.auth.id != "" && (@request.auth.is_admin = true \|\| @request.auth.is_superuser = true)` |
-| Create rule | `@request.auth.id != "" && (@request.auth.is_admin = true \|\| @request.auth.is_superuser = true)` |
-| Update rule | `@request.auth.id != "" && (shared_by.id = @request.auth.id \|\| @request.auth.is_superuser = true)` |
-| Delete rule | `@request.auth.id != "" && (shared_by.id = @request.auth.id \|\| @request.auth.is_superuser = true)` |
+| List rule   | `@request.auth.id != "" && (@request.auth.is_admin = true || @request.auth.is_superuser = true)` |
+| View rule   | `@request.auth.id != "" && (@request.auth.is_admin = true || @request.auth.is_superuser = true)` |
+| Create rule | `@request.auth.id != "" && (@request.auth.is_admin = true || @request.auth.is_superuser = true)` |
+| Update rule | `@request.auth.id != "" && (shared_by.id = @request.auth.id || @request.auth.is_superuser = true)` |
+| Delete rule | `@request.auth.id != "" && (shared_by.id = @request.auth.id || @request.auth.is_superuser = true)` |
 
 ---
 
@@ -268,15 +283,17 @@ müssen **hinzugefügt** werden (sofern noch nicht vorhanden):
 
 ### API Rules für users
 
-Damit Nutzer ihr eigenes Profil lesen können:
-
 | Rule        | Wert |
 |-------------|------|
 | List rule   | `@request.auth.id != "" && @request.auth.is_admin = true` |
-| View rule   | `@request.auth.id != "" && (id = @request.auth.id \|\| @request.auth.is_admin = true)` |
+| View rule   | `@request.auth.id != "" && (id = @request.auth.id || @request.auth.is_admin = true)` |
 | Create rule | `@request.auth.id != "" && @request.auth.is_superuser = true` |
-| Update rule | `@request.auth.id != "" && (id = @request.auth.id \|\| @request.auth.is_superuser = true)` |
+| Update rule | `@request.auth.id != "" && (id = @request.auth.id || @request.auth.is_superuser = true || @request.auth.is_admin = true)` |
 | Delete rule | `@request.auth.id != "" && @request.auth.is_superuser = true` |
+
+> **Warum `is_admin` in Update?** Admins müssen `group_id` anderer Nutzer
+> ändern dürfen. Die App-Logik stellt sicher, dass Admins keine
+> sicherheitsrelevanten Felder (`is_admin`, `is_superuser`) fremder Nutzer ändern.
 
 ---
 
@@ -390,42 +407,146 @@ meals_data
 
 ## 10. API-Rules Referenz
 
-Alle Regeln im Überblick zum schnellen Kopieren:
+Alle aktuellen Regeln im Überblick zum schnellen Kopieren.
 
 ### `groups`
 ```
-List/View: @request.auth.id != "" && (@request.auth.is_superuser = true || @collection.group_memberships.user.id ?= @request.auth.id)
+List/View:          @request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || @collection.group_memberships.user.id ?= @request.auth.id)
 Create/Update/Delete: @request.auth.id != "" && @request.auth.is_superuser = true
 ```
 
 ### `group_memberships`
 ```
-List/View: @request.auth.id != "" && (@request.auth.is_superuser = true || user.id = @request.auth.id)
-Create/Update/Delete: @request.auth.id != "" && @request.auth.is_superuser = true
+List/View:          @request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || user.id = @request.auth.id)
+Create/Update/Delete: @request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true)
 ```
 
 ### `meal_plans`
 ```
-List/View: @request.auth.id != "" && (@request.auth.is_superuser = true || @collection.group_memberships.group = group && @collection.group_memberships.user = @request.auth.id)
-Create/Update: @request.auth.id != "" && (@request.auth.is_superuser = true || @collection.group_memberships.group = group && @collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin")
-Delete: @request.auth.id != "" && @request.auth.is_superuser = true
+List/View:   @request.auth.id != ""
+Create/Update: @request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || @collection.group_memberships.group = group && @collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin")
+Delete:      @request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true)
 ```
 
 ### `orders`
 ```
-List/View: @request.auth.id != "" && (@request.auth.is_superuser = true || group.memberships.user = @request.auth.id)
-Create: @request.auth.id != "" && group.memberships.user = @request.auth.id
-Update/Delete: @request.auth.id != "" && (@request.auth.is_superuser = true || user.id = @request.auth.id || (group.memberships.user = @request.auth.id && group.memberships.role = "admin"))
+List/View:   @request.auth.id != "" && (@request.auth.is_superuser = true || @collection.group_memberships.user = @request.auth.id || group = @request.auth.group_id)
+Create:      @request.auth.id != "" && (@collection.group_memberships.user = @request.auth.id || group = @request.auth.group_id)
+Update/Delete: @request.auth.id != "" && (@request.auth.is_superuser = true || user.id = @request.auth.id || (@collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin"))
 ```
 
 ### `shared_plans`
 ```
 List/View/Create: @request.auth.id != "" && (@request.auth.is_admin = true || @request.auth.is_superuser = true)
-Update/Delete: @request.auth.id != "" && (shared_by.id = @request.auth.id || @request.auth.is_superuser = true)
+Update/Delete:    @request.auth.id != "" && (shared_by.id = @request.auth.id || @request.auth.is_superuser = true)
 ```
 
 ### `settings`
 ```
-List/View: @request.auth.id != ""
+List/View:          @request.auth.id != ""
 Create/Update/Delete: @request.auth.id != "" && @request.auth.is_superuser = true
 ```
+
+### `users`
+```
+List:    @request.auth.id != "" && @request.auth.is_admin = true
+View:    @request.auth.id != "" && (id = @request.auth.id || @request.auth.is_admin = true)
+Create:  @request.auth.id != "" && @request.auth.is_superuser = true
+Update:  @request.auth.id != "" && (id = @request.auth.id || @request.auth.is_superuser = true || @request.auth.is_admin = true)
+Delete:  @request.auth.id != "" && @request.auth.is_superuser = true
+```
+
+---
+
+## 11. Migrations-Checkliste für bestehende Installationen
+
+Wer die App bereits laufen hat und auf den aktuellen Stand bringen möchte,
+muss **keine neuen Felder oder Collections anlegen** – nur die API Rules
+in drei Collections aktualisieren.
+
+**Admin-UI → Collections → [Collection] → API Rules → Rule anklicken → Wert ersetzen → Speichern**
+
+---
+
+### Schritt 1 – `groups` → List Rule und View Rule
+
+```
+@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || @collection.group_memberships.user.id ?= @request.auth.id)
+```
+
+*(Beide Regeln – List und View – auf denselben Wert setzen.)*
+
+**Warum:** Admins sehen jetzt alle Gruppen in der Nutzerverwaltung, um Nutzer
+gruppenübergreifend zuweisen zu können.
+
+---
+
+### Schritt 2 – `group_memberships` → List Rule, View Rule, Create Rule, Update Rule, Delete Rule
+
+List/View:
+```
+@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || user.id = @request.auth.id)
+```
+
+Create/Update/Delete:
+```
+@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true)
+```
+
+**Warum:** Admins dürfen Mitgliedschaften verwalten (Nutzer zwischen Gruppen verschieben).
+
+---
+
+### Schritt 3 – `users` → Update Rule
+
+```
+@request.auth.id != "" && (id = @request.auth.id || @request.auth.is_superuser = true || @request.auth.is_admin = true)
+```
+
+**Warum:** Admins müssen das `group_id`-Feld anderer Nutzer setzen dürfen.
+Sicherheitsrelevante Felder (`is_admin`, `is_superuser`) können nur Superuser ändern –
+das wird durch die App-Logik sichergestellt, nicht durch die DB-Rule.
+
+---
+
+---
+
+### Schritt 4 – `meal_plans` → Create Rule, Update Rule, Delete Rule
+
+Create/Update:
+```
+@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true || @collection.group_memberships.group = group && @collection.group_memberships.user = @request.auth.id && @collection.group_memberships.role = "admin")
+```
+
+Delete:
+```
+@request.auth.id != "" && (@request.auth.is_superuser = true || @request.auth.is_admin = true)
+```
+
+**Warum:** Admins (`is_admin = true`) müssen Wochenpläne anlegen, bearbeiten und
+rotieren dürfen. Die bisherigen Regeln erlaubten das nur über `group_memberships`
+(Gruppenadmin-Rolle) oder als Superuser – ein Nutzer mit globalem `is_admin = true`
+wurde trotzdem abgelehnt.
+
+---
+
+---
+
+### Schritt 5 – `groups` → `archived`-Feld entfernen
+
+Das `archived`-Feld wird nicht mehr verwendet. Gruppen werden jetzt direkt
+gelöscht (mit Kaskade auf alle verknüpften Daten) statt archiviert.
+
+**Admin-UI → Collections → `groups` → Stiftsymbol (Edit) → Fields →
+`archived`-Feld anklicken → Löschen**
+
+> **Hinweis:** Wenn noch archivierte Gruppen existieren (d. h. Gruppen mit
+> `archived = true`), werden diese nach dem Entfernen des Feldes wieder in der
+> Gruppenverwaltung angezeigt. Diese können dann über den Löschen-Button
+> (mit Kaskade) endgültig entfernt werden.
+
+---
+
+> **Kein Schema-Change nötig:** Die automatische Menünummerierung (pro Tag ab 1)
+> ist rein frontend-seitig. An den Collections, Feldern oder JSON-Strukturen
+> ändert sich nichts (außer dem `archived`-Feld bei `groups`, s. Schritt 5).

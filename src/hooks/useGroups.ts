@@ -45,7 +45,7 @@ export function useGroups(currentUser: AuthUser | null) {
   );
 
   const updateGroup = useCallback(
-    async (id: string, data: Partial<GroupInput & { archived: boolean }>): Promise<void> => {
+    async (id: string, data: Partial<GroupInput>): Promise<void> => {
       if (!currentUser?.is_superuser) {
         addToast('Nur Superuser dürfen Gruppen bearbeiten.', 'error');
         return;
@@ -62,42 +62,17 @@ export function useGroups(currentUser: AuthUser | null) {
     [currentUser, activeGroup, setActiveGroup, refreshGroups, addToast]
   );
 
-  const archiveGroup = useCallback(
-    async (id: string): Promise<void> => {
-      if (!currentUser?.is_superuser) {
-        addToast('Nur Superuser dürfen Gruppen archivieren.', 'error');
-        return;
-      }
-      if (!window.confirm('Gruppe wirklich archivieren?')) return;
-      try {
-        await groupService.archive(id);
-        if (activeGroup?.id === id) setActiveGroup(null);
-        await refreshGroups();
-        addToast('Gruppe archiviert.', 'info');
-      } catch {
-        addToast('Fehler beim Archivieren.', 'error');
-      }
-    },
-    [currentUser, activeGroup, setActiveGroup, refreshGroups, addToast]
-  );
-
   const deleteGroup = useCallback(
     async (id: string): Promise<void> => {
       if (!currentUser?.is_superuser) {
         addToast('Nur Superuser dürfen Gruppen löschen.', 'error');
         return;
       }
-      if (
-        !window.confirm(
-          'Gruppe permanent löschen? Alle Daten (Pläne, Bestellungen) werden unwiderruflich gelöscht!'
-        )
-      )
-        return;
       try {
-        await groupService.delete(id);
+        await groupService.deleteWithCascade(id);
         if (activeGroup?.id === id) setActiveGroup(null);
         await refreshGroups();
-        addToast('Gruppe gelöscht.', 'info');
+        addToast('Gruppe und alle zugehörigen Daten gelöscht.', 'info');
       } catch {
         addToast('Fehler beim Löschen der Gruppe.', 'error');
       }
@@ -140,7 +115,6 @@ export function useGroups(currentUser: AuthUser | null) {
     loadStats,
     createGroup,
     updateGroup,
-    archiveGroup,
     deleteGroup,
     addMember,
     removeMember,

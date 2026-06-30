@@ -45,7 +45,9 @@ export const MealCard = memo(function MealCard({
     .map(([person, dayMap]) => ({ person, order: dayMap[day] }))
     .filter(({ order }) => !!order);
 
-  const existingNumbers = meals.map(m => m.number);
+  // Auto-number: starts at 1 per day, increments from the current max
+  const existingNums = meals.map(m => parseInt(m.number, 10)).filter(n => !isNaN(n));
+  const autoNumber = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
 
   return (
     <div className={`meal-card${dayLocked && !isArchive ? ' meal-card--locked' : ''}`}>
@@ -83,17 +85,21 @@ export const MealCard = memo(function MealCard({
                 {(m.vegan || m.vegetarian) && (
                   <span
                     className={`diet-badge${m.vegan ? ' diet-badge--vegan' : ' diet-badge--veg'}`}
-                    title={m.vegan ? 'Vegan' : 'Vegetarisch'}
                   >
-                    {m.vegan ? '🌱' : '🥦'}
+                    {m.vegan ? '🌱 Vegan' : '🥦 Vegetarisch'}
                   </span>
                 )}
                 {m.allergens && m.allergens.length > 0 && (
-                  <span
-                    className="allergen-indicator"
-                    title={m.allergens.map(a => `${a}: ${ALLERGENS[a] ?? a}`).join(', ')}
-                  >
-                    ⚠️ {m.allergens.join(',')}
+                  <span className="allergen-indicator">
+                    {m.allergens.map(a => (
+                      <span
+                        key={a}
+                        className="allergen-chip-display"
+                        title={ALLERGENS[a] ?? a}
+                      >
+                        {a}: {ALLERGENS[a] ?? a}
+                      </span>
+                    ))}
                   </span>
                 )}
               </div>
@@ -173,7 +179,7 @@ export const MealCard = memo(function MealCard({
       {!isArchive && currentUser?.is_admin && !dayLocked && onAddMeal && (
         <AddMealForm
           day={day}
-          existingNumbers={existingNumbers}
+          autoNumber={autoNumber}
           onAdd={onAddMeal}
         />
       )}

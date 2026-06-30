@@ -1,5 +1,5 @@
 import type { WeekData } from '../types';
-import { calculateUserTotal, parsePrice, downloadFile, downloadBlob } from '../lib/utils';
+import { calculateUserTotal, parsePrice, downloadFile } from '../lib/utils';
 
 // ─── TXT ──────────────────────────────────────────────────────────────────────
 
@@ -81,41 +81,6 @@ export async function exportPDF(weekData: WeekData, label: string): Promise<void
   });
 
   doc.save(`Abrechnung_${label}.pdf`);
-}
-
-// ─── Excel ────────────────────────────────────────────────────────────────────
-
-export async function exportXLSX(weekData: WeekData, label: string): Promise<void> {
-  const XLSX = await import('xlsx');
-
-  const entries = Object.entries(weekData.orders);
-  const wsData: (string | number)[][] = [
-    ['Name', 'Anzahl', 'Summe (€)', 'Details'],
-  ];
-
-  entries.forEach(([person, orders]) => {
-    wsData.push([
-      person,
-      Object.keys(orders).length,
-      parseFloat(calculateUserTotal(orders).toFixed(2)),
-      Object.entries(orders)
-        .map(([d, m]) => `${d}: #${m.number} – ${m.name}`)
-        .join('; '),
-    ]);
-  });
-
-  const total = entries.reduce((s, [, o]) => s + calculateUserTotal(o), 0);
-  wsData.push(['GESAMT', entries.reduce((s, [, o]) => s + Object.keys(o).length, 0), parseFloat(total.toFixed(2)), '']);
-
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Abrechnung');
-
-  const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-  downloadBlob(
-    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-    `Abrechnung_${label}.xlsx`
-  );
 }
 
 // ─── JSON Backup ──────────────────────────────────────────────────────────────

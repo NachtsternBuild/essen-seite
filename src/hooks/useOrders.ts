@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { orderService } from '../services/orderService';
+import { pb } from '../lib/pocketbase';
 import { useToastContext } from '../context/ToastContext';
 import { isLocked } from '../lib/utils';
 import type { Order, OrdersByUser, DayOfWeek, AuthUser, MealPlan, DayMeals } from '../types';
@@ -28,7 +29,10 @@ export function useOrders(
       setRawOrders(orders);
       setOrdersByUser(orderService.normalizeOrders(orders));
     } catch {
-      addToast('Fehler beim Laden der Bestellungen.', 'error');
+      // Suppress during auth transitions (login/logout) – not a real error
+      if (pb.authStore.isValid) {
+        addToast('Fehler beim Laden der Bestellungen.', 'error');
+      }
     } finally {
       setIsLoading(false);
     }

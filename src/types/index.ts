@@ -54,7 +54,6 @@ export interface Group {
   name: string;
   description: string;
   color: string;
-  archived: boolean;
   linked_group?: string;
   created: string;
   updated: string;
@@ -222,7 +221,7 @@ export interface AppData {
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
-export type ExportFormat = 'txt' | 'csv' | 'pdf' | 'xlsx' | 'json';
+export type ExportFormat = 'txt' | 'csv' | 'pdf' | 'json';
 
 export interface ExportOptions {
   format: ExportFormat;

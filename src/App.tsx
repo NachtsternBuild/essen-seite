@@ -46,26 +46,27 @@ export default function App() {
   const { activeGroup, allGroups } = useGroups(currentUser);
   const groupId = activeGroup?.id ?? null;
 
-  // When linked_group is set, fetch meal data from the source group but keep
-  // orders tagged with the current group for separate billing.
   const linkedGroupId = activeGroup?.linked_group ?? null;
-  const effectiveGroupId = linkedGroupId ?? groupId;
-  const isSharedPlan = !!linkedGroupId;
   const linkedGroupName = linkedGroupId
     ? allGroups.find(g => g.id === linkedGroupId)?.name
     : undefined;
 
   // ── Meal plans ────────────────────────────────────────────────────────────────
+  // Always load own plans for groupId; fall back to linkedGroupId's plans when
+  // the group has no own plans yet (isUsingLinkedPlan = true → read-only).
   const {
     current: currentPlan,
     upcoming: upcomingPlan,
     previous: previousPlan,
     isLoading: isLoadingMeals,
+    isUsingLinkedPlan,
     addMeal,
     removeMeal,
     rotateWeek,
     createPlan,
-  } = useMeals(effectiveGroupId);
+  } = useMeals(groupId, linkedGroupId);
+
+  const isSharedPlan = isUsingLinkedPlan;
 
   // ── Orders ────────────────────────────────────────────────────────────────────
   const {
@@ -314,17 +315,25 @@ export default function App() {
           <>
             <div className="page-header">
               <h2 className="page-title">📅 Planung – Nächste Woche</h2>
-              {isAdmin && !isSharedPlan && (
+              {isAdmin && (
                 <div className="page-header__actions">
-                  {!upcomingPlan && (
+                  {isSharedPlan && (
                     <button
-                      className="btn btn--primary btn--sm"
+                      className="btn btn--primary"
+                      onClick={() => createPlan('upcoming')}
+                    >
+                      + Eigenen Plan anlegen
+                    </button>
+                  )}
+                  {!isSharedPlan && !upcomingPlan && (
+                    <button
+                      className="btn btn--primary"
                       onClick={() => createPlan('upcoming')}
                     >
                       + Neuen Plan anlegen
                     </button>
                   )}
-                  {upcomingPlan && (
+                  {!isSharedPlan && upcomingPlan && (
                     <button
                       className="btn btn--danger"
                       onClick={rotateWeek}
@@ -345,10 +354,17 @@ export default function App() {
             {!upcomingPlan ? (
               <EmptyState
                 icon="📋"
-                message="Noch kein Planungsplan für nächste Woche vorhanden."
+                message={
+                  isSharedPlan
+                    ? 'Die verlinkte Gruppe hat noch keinen Plan für nächste Woche.'
+                    : 'Noch kein Planungsplan für nächste Woche vorhanden.'
+                }
                 action={
-                  isAdmin && !isSharedPlan
-                    ? { label: 'Plan anlegen', onClick: () => createPlan('upcoming') }
+                  isAdmin
+                    ? {
+                        label: isSharedPlan ? 'Eigenen Plan anlegen' : 'Plan anlegen',
+                        onClick: () => createPlan('upcoming'),
+                      }
                     : undefined
                 }
               />
@@ -386,13 +402,25 @@ export default function App() {
           <>
             <div className="page-header">
               <h2 className="page-title">🗓 Aktuelle Woche</h2>
-              {isAdmin && !currentPlan && !isSharedPlan && (
-                <button
-                  className="btn btn--primary btn--sm"
-                  onClick={() => createPlan('current')}
-                >
-                  + Plan anlegen
-                </button>
+              {isAdmin && (
+                <>
+                  {isSharedPlan && (
+                    <button
+                      className="btn btn--primary"
+                      onClick={() => createPlan('current')}
+                    >
+                      + Eigenen Plan anlegen
+                    </button>
+                  )}
+                  {!isSharedPlan && !currentPlan && (
+                    <button
+                      className="btn btn--primary"
+                      onClick={() => createPlan('current')}
+                    >
+                      + Plan anlegen
+                    </button>
+                  )}
+                </>
               )}
             </div>
 

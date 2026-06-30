@@ -63,7 +63,7 @@ export const mealItemSchema = z.object({
     .max(100, 'Name darf höchstens 100 Zeichen haben')
     .regex(/\S/, 'Name darf nicht nur Leerzeichen enthalten'),
   price: z.coerce
-    .number({ invalid_type_error: 'Preis muss eine Zahl sein' })
+    .number({ error: 'Preis muss eine Zahl sein' })
     .positive('Preis muss größer als 0 sein')
     .max(100, 'Preis scheint zu hoch'),
   vegetarian: z.boolean().optional(),

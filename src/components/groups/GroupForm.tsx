@@ -3,6 +3,7 @@ import { groupSchema } from '../../lib/validation';
 import type { Group } from '../../types';
 import type { GroupInput } from '../../lib/validation';
 import { Spinner } from '../shared/Spinner';
+import { CustomSelect, type SelectOption } from '../shared/CustomSelect';
 
 const GROUP_COLORS = [
   '#d97706', '#dc2626', '#16a34a', '#2563eb', '#7c3aed',
@@ -59,7 +60,9 @@ export function GroupForm({
     }
   };
 
-  const otherGroups = allGroups.filter(g => g.id !== currentGroupId && !g.archived);
+  // Only groups with their own plan (no linked_group) can be a link target.
+  // This prevents chains like C → B → A where B already links to A.
+  const linkableGroups = allGroups.filter(g => g.id !== currentGroupId && !g.linked_group);
 
   return (
     <div className="group-form">
@@ -128,25 +131,32 @@ export function GroupForm({
         )}
       </div>
 
-      {isSuperuser && otherGroups.length > 0 && (
+      {isSuperuser && (
         <div className="form-group">
           <label className="form-label" htmlFor="gf-linked">
             Plan teilen mit Gruppe
           </label>
-          <select
-            id="gf-linked"
-            className="form-input"
-            value={linkedGroup}
-            onChange={e => setLinkedGroup(e.target.value)}
-          >
-            <option value="">Kein geteilter Plan</option>
-            {otherGroups.map(g => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
-          <span className="form-label" style={{ textTransform: 'none', fontSize: '0.8rem', fontWeight: 400 }}>
-            Diese Gruppe verwendet dann den Speiseplan der ausgewählten Gruppe.
-          </span>
+          {linkableGroups.length === 0 ? (
+            <p className="form-hint">
+              Keine verfügbaren Gruppen – nur Gruppen mit eigenem Plan können als Quelle gewählt werden.
+            </p>
+          ) : (
+            <>
+              <CustomSelect
+                value={linkedGroup}
+                options={[
+                  { value: '', label: 'Kein geteilter Plan' },
+                  ...linkableGroups.map((g): SelectOption => ({ value: g.id, label: g.name })),
+                ]}
+                onChange={setLinkedGroup}
+                ariaLabel="Gruppe für geteilten Plan auswählen"
+              />
+              <span className="form-hint">
+                Diese Gruppe verwendet dann den Speiseplan der ausgewählten Gruppe.
+                Nur Gruppen ohne eigene Verknüpfung sind wählbar (keine Kettenverlinkung).
+              </span>
+            </>
+          )}
         </div>
       )}
 

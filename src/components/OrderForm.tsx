@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import type { AuthUser, DayMeals, DayOfWeek, MealItem } from '../types';
+import { ALLERGENS } from '../types';
 import { isLocked } from '../lib/utils';
+import { CustomSelect, type SelectOption } from './shared/CustomSelect';
 
 interface OrderFormProps {
   days: readonly string[];
@@ -49,6 +51,35 @@ export function OrderForm({
 
   const selectedMeal = availableMenus.find(m => m.number === nr);
 
+  const dayOptions: SelectOption[] = availableDays.map(d => ({ value: d, label: d }));
+
+  const mealOptions: SelectOption[] = [
+    { value: '', label: 'Menü wählen …' },
+    ...availableMenus.map(m => {
+      const price = typeof m.price === 'number'
+        ? m.price.toFixed(2).replace('.', ',')
+        : m.price;
+      const dietLabel = m.vegan ? ' 🌱 Vegan' : m.vegetarian ? ' 🥦 Vegetarisch' : '';
+      return {
+        value: m.number,
+        label: `#${m.number} – ${m.name}${dietLabel}`,
+        node: (
+          <div className="meal-option">
+            <span className="meal-option__num">#{m.number}</span>
+            <span className="meal-option__name">{m.name}</span>
+            <span className="meal-option__price">{price} €</span>
+            {m.vegan && (
+              <span className="diet-badge diet-badge--vegan">🌱 Vegan</span>
+            )}
+            {!m.vegan && m.vegetarian && (
+              <span className="diet-badge diet-badge--veg">🥦 Vegetarisch</span>
+            )}
+          </div>
+        ),
+      };
+    }),
+  ];
+
   return (
     <div className="order-form">
       <div className="order-form__header">
@@ -59,52 +90,45 @@ export function OrderForm({
       </div>
 
       <div className="order-form__controls">
-        <select
-          className="form-input"
+        <CustomSelect
           value={day}
-          onChange={e => {
-            setDay(e.target.value);
-            setNr('');
-          }}
-          aria-label="Tag auswählen"
-        >
-          {availableDays.map(d => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
+          options={dayOptions}
+          onChange={v => { setDay(v); setNr(''); }}
+          ariaLabel="Tag auswählen"
+        />
 
-        <select
-          className="form-input"
+        <CustomSelect
           value={nr}
-          onChange={e => setNr(e.target.value)}
-          aria-label="Menü auswählen"
+          options={mealOptions}
+          onChange={setNr}
+          placeholder="Menü wählen …"
           disabled={availableMenus.length === 0}
-        >
-          <option value="">Menü wählen …</option>
-          {availableMenus.map(m => (
-            <option key={m.number} value={m.number}>
-              #{m.number} – {m.name} ({typeof m.price === 'number' ? m.price.toFixed(2).replace('.', ',') : m.price} €)
-              {m.vegan ? ' 🌱' : m.vegetarian ? ' 🥦' : ''}
-            </option>
-          ))}
-        </select>
+          ariaLabel="Menü auswählen"
+        />
 
         <button
           className="btn btn--primary"
           onClick={handleOrder}
           disabled={!nr}
-          aria-label={`${nr ? `Menü #${nr} für ${day} bestellen` : 'Bestellen'}`}
+          aria-label={nr ? `Menü #${nr} für ${day} bestellen` : 'Bestellen'}
         >
           Bestellen
         </button>
       </div>
 
-      {selectedMeal?.allergens && selectedMeal.allergens.length > 0 && (
-        <p className="order-form__allergens">
-          ⚠️ Enthält: {selectedMeal.allergens.join(', ')}
-        </p>
+      {selectedMeal && (selectedMeal.vegan || selectedMeal.vegetarian || (selectedMeal.allergens && selectedMeal.allergens.length > 0)) && (
+        <div className="order-form__meal-info">
+          {(selectedMeal.vegan || selectedMeal.vegetarian) && (
+            <span className={`diet-badge${selectedMeal.vegan ? ' diet-badge--vegan' : ' diet-badge--veg'}`}>
+              {selectedMeal.vegan ? '🌱 Vegan' : '🥦 Vegetarisch'}
+            </span>
+          )}
+          {selectedMeal.allergens && selectedMeal.allergens.length > 0 && (
+            <span className="order-form__allergens">
+              ⚠️ Enthält: {selectedMeal.allergens.map(a => `${a} (${ALLERGENS[a] ?? a})`).join(', ')}
+            </span>
+          )}
+        </div>
       )}
 
       {availableMenus.length === 0 && day && (

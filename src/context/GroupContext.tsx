@@ -44,19 +44,25 @@ export function GroupProvider({
           setActiveGroup(groups[0]);
         }
       } else {
+        // Find own group first (for activeGroup / meal plan context)
         const membership = await groupService.getUserMembership(currentUser.id);
-        if (membership?.expand?.group) {
-          const g = membership.expand.group;
-          setAllGroups([g]);
-          setActiveGroup(g);
-        } else if (currentUser.group_id) {
+        const ownGroup = membership?.expand?.group ?? null;
+        let resolvedGroup = ownGroup;
+        if (!resolvedGroup && currentUser.group_id) {
           try {
-            const g = await groupService.getById(currentUser.group_id);
-            setAllGroups([g]);
-            setActiveGroup(g);
+            resolvedGroup = await groupService.getById(currentUser.group_id);
           } catch {
             // group not found
           }
+        }
+        if (resolvedGroup) setActiveGroup(resolvedGroup);
+
+        if (currentUser.is_admin) {
+          // Admins see all groups so they can reassign users across groups
+          const allActive = await groupService.getAll();
+          setAllGroups(allActive);
+        } else {
+          setAllGroups(resolvedGroup ? [resolvedGroup] : []);
         }
       }
       initializedRef.current = true;

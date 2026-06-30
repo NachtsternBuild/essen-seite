@@ -20,13 +20,13 @@ export function GroupManagement({ currentUser }: GroupManagementProps) {
     loadStats,
     createGroup,
     updateGroup,
-    archiveGroup,
     deleteGroup,
   } = useGroups(currentUser);
 
   const [showCreate, setShowCreate] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
-  const [showArchived, setShowArchived] = useState(false);
+  const [deletingGroup, setDeletingGroup] = useState<GroupWithStats | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -43,11 +43,17 @@ export function GroupManagement({ currentUser }: GroupManagementProps) {
     setEditingGroup(null);
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!deletingGroup) return;
+    setIsDeleting(true);
+    await deleteGroup(deletingGroup.id);
+    setIsDeleting(false);
+    setDeletingGroup(null);
+  };
+
   const displayGroups: GroupWithStats[] = groupsWithStats.length
-    ? groupsWithStats.filter(g => showArchived || !g.archived)
-    : allGroups
-        .filter(g => showArchived || !g.archived)
-        .map(g => ({ ...g, memberCount: 0, adminNames: [], orderCount: 0 }));
+    ? groupsWithStats
+    : allGroups.map(g => ({ ...g, memberCount: 0, adminNames: [], orderCount: 0 }));
 
   if (isLoadingGroups) {
     return (
@@ -61,22 +67,12 @@ export function GroupManagement({ currentUser }: GroupManagementProps) {
     <div className="card">
       <div className="card-header">
         <h3 className="card__title">🏢 Gruppenverwaltung</h3>
-        <div className="card-header__actions">
-          <label className="toggle-label">
-            <input
-              type="checkbox"
-              checked={showArchived}
-              onChange={e => setShowArchived(e.target.checked)}
-            />
-            <span>Archivierte anzeigen</span>
-          </label>
-          <button
-            className="btn btn--success btn--sm"
-            onClick={() => setShowCreate(true)}
-          >
-            + Neue Gruppe
-          </button>
-        </div>
+        <button
+          className="btn btn--success"
+          onClick={() => setShowCreate(true)}
+        >
+          + Neue Gruppe
+        </button>
       </div>
 
       {displayGroups.length === 0 ? (
@@ -94,8 +90,7 @@ export function GroupManagement({ currentUser }: GroupManagementProps) {
               allGroups={allGroups}
               isLoadingStats={isLoadingStats}
               onEdit={() => setEditingGroup(group)}
-              onArchive={() => archiveGroup(group.id)}
-              onDelete={() => deleteGroup(group.id)}
+              onDelete={() => setDeletingGroup(group)}
             />
           ))}
         </div>
@@ -134,6 +129,51 @@ export function GroupManagement({ currentUser }: GroupManagementProps) {
           />
         )}
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={!!deletingGroup}
+        onClose={() => !isDeleting && setDeletingGroup(null)}
+        title="Gruppe löschen"
+        size="sm"
+        footer={
+          <>
+            <button
+              className="btn btn--ghost"
+              onClick={() => setDeletingGroup(null)}
+              disabled={isDeleting}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="btn btn--danger"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? <Spinner size="sm" /> : 'Endgültig löschen'}
+            </button>
+          </>
+        }
+      >
+        {deletingGroup && (
+          <div className="confirm-delete">
+            <p className="confirm-delete__text">
+              Soll die Gruppe <strong>{deletingGroup.name}</strong> wirklich gelöscht werden?
+            </p>
+            <div className="confirm-delete__consequences">
+              <p className="confirm-delete__label">Folgendes wird unwiderruflich gelöscht:</p>
+              <ul className="confirm-delete__list">
+                <li>Alle Wochenpläne der Gruppe</li>
+                <li>Alle Bestellungen der Gruppe</li>
+                <li>Alle Gruppenmitgliedschaften</li>
+              </ul>
+              <p className="confirm-delete__note">
+                Nutzerkonten bleiben erhalten, werden aber keiner Gruppe mehr zugeordnet.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
@@ -145,7 +185,6 @@ interface GroupCardProps {
   allGroups: Group[];
   isLoadingStats: boolean;
   onEdit: () => void;
-  onArchive: () => void;
   onDelete: () => void;
 }
 
@@ -154,7 +193,6 @@ function GroupCard({
   allGroups,
   isLoadingStats,
   onEdit,
-  onArchive,
   onDelete,
 }: GroupCardProps) {
   const linkedGroupName = group.linked_group
@@ -163,16 +201,13 @@ function GroupCard({
 
   return (
     <div
-      className={`group-card${group.archived ? ' group-card--archived' : ''}`}
+      className="group-card"
       style={{ '--group-color': group.color || '#d97706' } as React.CSSProperties}
     >
       <div className="group-card__color-bar" />
       <div className="group-card__body">
         <div className="group-card__header">
           <h4 className="group-card__name">{group.name}</h4>
-          {group.archived && (
-            <span className="badge badge--muted">Archiviert</span>
-          )}
         </div>
 
         {group.description && (
@@ -210,23 +245,13 @@ function GroupCard({
           >
             Bearbeiten
           </button>
-          {!group.archived ? (
-            <button
-              className="btn btn--ghost btn--xs"
-              onClick={onArchive}
-              aria-label="Gruppe archivieren"
-            >
-              Archivieren
-            </button>
-          ) : (
-            <button
-              className="btn btn--ghost btn--xs btn--danger-outline"
-              onClick={onDelete}
-              aria-label="Gruppe löschen"
-            >
-              Löschen
-            </button>
-          )}
+          <button
+            className="btn btn--ghost btn--xs btn--danger-outline"
+            onClick={onDelete}
+            aria-label="Gruppe löschen"
+          >
+            Löschen
+          </button>
         </div>
       </div>
     </div>

@@ -94,24 +94,16 @@
 }
 
 /* ─── Users table ────────────────────────────────────────────────────────────── */
-.user-create-form { margin-bottom: 24px; }
-
-.user-create-form__heading {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  font-family: var(--font-secondary);
-  margin-bottom: 10px;
-}
-
-.user-create-form__fields {
+.user-mgmt__header {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: flex-start;
 }
+
+.user-mgmt__header .card__title { margin-bottom: 0; }
 
 .users-table {
   width: 100%;
