@@ -12,11 +12,21 @@ interface ThemeContextValue {
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
   effectiveTheme: 'light' | 'dark';
+  /** Custom accent colour (hex), or null to use the built-in default. */
+  accent: string | null;
+  setAccent: (hex: string | null) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = 'meal_planner_theme';
+const ACCENT_KEY = 'meal_planner_accent';
+
+function applyAccent(hex: string | null): void {
+  const root = document.documentElement;
+  if (hex) root.style.setProperty('--accent', hex);
+  else root.style.removeProperty('--accent');
+}
 
 function getSystemTheme(): 'light' | 'dark' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -37,12 +47,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>(() =>
     applyTheme((localStorage.getItem(STORAGE_KEY) as ThemeMode) ?? 'system')
   );
+  const [accent, setAccentState] = useState<string | null>(() => {
+    const stored = localStorage.getItem(ACCENT_KEY);
+    if (stored) applyAccent(stored);
+    return stored || null;
+  });
 
   useEffect(() => {
     const effective = applyTheme(theme);
     setEffectiveTheme(effective);
     localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
+
+  useEffect(() => {
+    applyAccent(accent);
+    if (accent) localStorage.setItem(ACCENT_KEY, accent);
+    else localStorage.removeItem(ACCENT_KEY);
+  }, [accent]);
 
   // Re-apply when system preference changes
   useEffect(() => {
@@ -57,9 +78,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme]);
 
   const setTheme = useCallback((t: ThemeMode) => setThemeState(t), []);
+  const setAccent = useCallback((hex: string | null) => setAccentState(hex), []);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, effectiveTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, effectiveTheme, accent, setAccent }}>
       {children}
     </ThemeContext.Provider>
   );

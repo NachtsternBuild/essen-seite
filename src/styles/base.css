@@ -201,3 +201,4 @@ a:hover {
 }
 
 .badge--muted { background: var(--surface-2); color: var(--text-muted); }
+.badge--success { background: color-mix(in srgb, var(--color-success) 18%, transparent); color: var(--color-success); }

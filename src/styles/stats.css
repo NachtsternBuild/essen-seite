@@ -1,0 +1,126 @@
+/* ── Phase 2: dashboards & statistics ─────────────────────────────────────── */
+
+/* KPI tiles */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 4px 0 8px;
+}
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+.stat-card--accent { border-color: var(--accent); }
+.stat-card__icon { font-size: 1.6rem; line-height: 1; }
+.stat-card__value {
+  font-family: var(--font-secondary, inherit);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+.stat-card__label { font-size: .82rem; color: var(--text-muted); }
+.stat-card__hint { font-size: .72rem; color: var(--text-muted); margin-top: 2px; }
+
+/* Bar list (dependency-free horizontal bars) */
+.bar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bar-list__empty { color: var(--text-muted); font-size: .9rem; }
+.bar-list__row {
+  display: grid;
+  grid-template-columns: minmax(80px, 38%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.bar-list__label {
+  font-size: .85rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-list__track {
+  height: 10px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar-list__fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+.bar-list__value { font-size: .82rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+.bar-list__sub { font-weight: 400; color: var(--text-muted); }
+
+/* Statistics page layout */
+.stats-page__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.stats-page__scope { font-weight: 600; color: var(--text-muted); }
+.stats-page__actions { display: flex; gap: 8px; }
+.stats-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.stats-columns__wide { grid-column: 1 / -1; }
+.diet-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+/* Dashboard */
+.dashboard { display: flex; flex-direction: column; gap: 16px; }
+.dashboard__hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  color: #fff;
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 55%, #000) 0%, transparent 60%),
+    linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 70%, #000) 100%);
+  box-shadow: var(--shadow-md);
+}
+.dashboard__hero-greeting { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+.dashboard__hero-date { font-size: .85rem; opacity: .85; margin-top: 2px; text-transform: capitalize; }
+.dashboard__hero-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.dashboard__hero-badge {
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .18);
+  backdrop-filter: blur(2px);
+}
+.dashboard__hero-badge--group {
+  background: rgba(255, 255, 255, .92);
+  color: var(--group-color, var(--text));
+}
+.dashboard__panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.dashboard__subtitle { margin: 14px 0 6px; font-size: .95rem; color: var(--text); }
+.dashboard__today { margin-top: 8px; }
+.dashboard__menu-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.dashboard__menu-list li { font-size: .9rem; }
+.dashboard__actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.dashboard__role-note { font-size: .8rem; color: var(--text-muted); text-align: right; }
+
+@media (max-width: 520px) {
+  .diet-row { grid-template-columns: 1fr; }
+  .bar-list__row { grid-template-columns: minmax(70px, 45%) 1fr auto; }
+}

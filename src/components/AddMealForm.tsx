@@ -14,6 +14,7 @@ const PRICE_REGEX = /^[0-9]*[.,]?[0-9]*$/;
 export function AddMealForm({ day, autoNumber, onAdd }: AddMealFormProps) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
+  const [description, setDescription] = useState('');
   const [vegetarian, setVegetarian] = useState(false);
   const [vegan, setVegan] = useState(false);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
@@ -39,6 +40,7 @@ export function AddMealForm({ day, autoNumber, onAdd }: AddMealFormProps) {
       vegetarian,
       vegan,
       allergens: selectedAllergens,
+      description: description.trim() || undefined,
     });
 
     if (!result.success) {
@@ -54,6 +56,7 @@ export function AddMealForm({ day, autoNumber, onAdd }: AddMealFormProps) {
     onAdd(day, result.data);
     setName('');
     setPrice('');
+    setDescription('');
     setVegetarian(false);
     setVegan(false);
     setSelectedAllergens([]);
@@ -139,6 +142,17 @@ export function AddMealForm({ day, autoNumber, onAdd }: AddMealFormProps) {
           + Hinzufügen
         </button>
       </div>
+
+      {/* Optional extended description */}
+      <input
+        className="form-input form-input--sm add-meal-form__desc"
+        placeholder="Beschreibung (optional) – Zutaten, Zusatzstoffe …"
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+        onKeyDown={handleKeyDown}
+        maxLength={300}
+        aria-label="Beschreibung des Gerichts"
+      />
 
       {/* Inline validation errors */}
       {Object.keys(errors).length > 0 && (

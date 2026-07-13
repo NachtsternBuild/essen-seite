@@ -95,15 +95,62 @@
 
 /* ─── Menu item ──────────────────────────────────────────────────────────────── */
 .menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 5px 0;
-  gap: 8px;
+  display: block;
+  padding: 3px 0;
   border-bottom: 1px solid var(--border);
 }
 
 .menu-item:last-of-type { border-bottom: none; }
+
+.menu-item__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Clickable name/price row (opens details). Looks like plain text, not a button. */
+.menu-item__main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.menu-item__main:disabled { cursor: default; }
+.menu-item__main:not(:disabled):hover .menu-item__name { color: var(--accent); }
+
+.menu-item__diet { font-size: 0.95rem; line-height: 1; flex-shrink: 0; }
+.menu-item__chevron { font-size: 0.6rem; color: var(--text-muted); flex-shrink: 0; }
+
+.menu-item__details {
+  padding: 6px 0 10px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeIn .12s ease;
+}
+.menu-item__desc { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
+.menu-item__detail-line { font-size: 0.82rem; color: var(--text-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.menu-item__chips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.menu-item__chip {
+  font-family: var(--font-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent-light);
+  color: var(--accent-hover);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  white-space: nowrap;
+}
 
 .menu-item__info {
   display: flex;
@@ -309,3 +356,29 @@
   gap: 6px;
   flex-wrap: wrap;
 }
+
+/* ── Phase 1: group management additions ──────────────────────────────────── */
+.card-header__actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.group-archive-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 14px;
+  font-size: .9rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.group-card__breadcrumb {
+  font-size: .75rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.group-card__logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+  vertical-align: -4px;
+  margin-right: 6px;
+}
+.group-card__logo-emoji { margin-right: 6px; }

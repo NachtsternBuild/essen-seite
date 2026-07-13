@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import { useAuthContext } from './context/AuthContext';
 import { GroupProvider } from './context/GroupContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PermissionProvider } from './context/PermissionContext';
 import App from './App';
 import './index.css';
 
@@ -23,9 +24,11 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <ToastProvider>
         <AuthProvider>
-          <GroupProviderBridge>
-            <App />
-          </GroupProviderBridge>
+          <PermissionProvider>
+            <GroupProviderBridge>
+              <App />
+            </GroupProviderBridge>
+          </PermissionProvider>
         </AuthProvider>
       </ToastProvider>
     </ThemeProvider>

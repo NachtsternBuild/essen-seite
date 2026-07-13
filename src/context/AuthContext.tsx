@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { authService } from '../services/authService';
+import { auditService } from '../services/auditService';
 import type { AuthUser } from '../types';
 
 interface AuthContextValue {
@@ -39,6 +40,7 @@ export function AuthProvider({ children, onLoginError }: {
       try {
         const user = await authService.login(email, password);
         setCurrentUser(user);
+        void auditService.logLogin(user);
       } catch {
         onLoginError?.('Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen.');
         throw new Error('Login failed');
@@ -50,9 +52,11 @@ export function AuthProvider({ children, onLoginError }: {
   );
 
   const logout = useCallback(() => {
+    // Capture the user before the auth store is cleared so the entry is attributed.
+    if (currentUser) void auditService.logLogout(currentUser);
     authService.logout();
     setCurrentUser(null);
-  }, []);
+  }, [currentUser]);
 
   return (
     <AuthContext.Provider

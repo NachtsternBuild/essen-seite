@@ -51,8 +51,11 @@
 :root,
 [data-theme="light"] {
   --accent:         #d97706;
-  --accent-hover:   #b45309;
-  --accent-light:   #fef3c7;
+  /* Derived from --accent so a custom accent (and dark mode) auto-adapt.
+     --accent-hover = accent darkened; --accent-light = subtle tint on the
+     current surface (recomputes per theme because --surface differs). */
+  --accent-hover:   color-mix(in srgb, var(--accent) 85%, #000);
+  --accent-light:   color-mix(in srgb, var(--accent) 14%, var(--surface));
 
   --color-success:  #16a34a;
   --color-danger:   #dc2626;
@@ -89,7 +92,6 @@
   --border-strong:  #57463a;
   --text:           #fafaf8;
   --text-muted:     #a8a29e;
-  --accent-light:   #451a03;
 
   --shadow-sm:      0 1px 3px rgba(0,0,0,.25);
   --shadow-md:      0 4px 12px rgba(0,0,0,.35);
@@ -106,6 +108,5 @@
     --border-strong:  #57463a;
     --text:           #fafaf8;
     --text-muted:     #a8a29e;
-    --accent-light:   #451a03;
   }
 }

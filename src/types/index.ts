@@ -43,6 +43,58 @@ export interface AuthUser {
   is_superuser: boolean;
   info?: string;
   group_id?: string;
+  /**
+   * Optional reference to a {@link Role} in the `roles` collection. When set,
+   * it is the primary source of the user's permissions. When unset, permissions
+   * fall back to the legacy is_admin/is_superuser flags so existing accounts
+   * keep working unchanged.
+   */
+  role?: string;
+  created?: string;
+  updated?: string;
+}
+
+// ─── Roles & Permissions ───────────────────────────────────────────────────────
+
+/**
+ * A single capability. The authoritative catalog lives in `lib/permissions.ts`;
+ * this type is the string-literal union of every key in that catalog.
+ */
+export type Permission =
+  | 'VIEW_USERS'
+  | 'CREATE_USERS'
+  | 'EDIT_USERS'
+  | 'DELETE_USERS'
+  | 'VIEW_MEALS'
+  | 'EDIT_MEALS'
+  | 'DELETE_MEALS'
+  | 'PLACE_ORDERS'
+  | 'VIEW_ORDERS'
+  | 'EXPORT_DATA'
+  | 'IMPORT_DATA'
+  | 'CREATE_GROUPS'
+  | 'EDIT_GROUPS'
+  | 'DELETE_GROUPS'
+  | 'MANAGE_TEMPLATES'
+  | 'VIEW_STATISTICS'
+  | 'MANAGE_PERMISSIONS'
+  | 'VIEW_AUDIT_LOG'
+  | 'MANAGE_TRASH'
+  | 'SYSTEM_SETTINGS';
+
+/** Slugs of the three built-in roles that always exist. */
+export type StandardRoleSlug = 'user' | 'group_admin' | 'superuser';
+
+export interface Role {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  permissions: Permission[];
+  /** System roles cannot be deleted and define the backward-compatible defaults. */
+  is_system: boolean;
+  /** Optional group scope. Null/empty = global role available to every group. */
+  group?: string;
   created?: string;
   updated?: string;
 }
@@ -55,8 +107,31 @@ export interface Group {
   description: string;
   color: string;
   linked_group?: string;
+  /** Optional parent group id, enabling a nested group hierarchy. */
+  parent_group?: string;
+  /** Soft-archive flag (group hidden but not deleted). */
+  archived?: boolean;
+  /**
+   * Per-group settings bag (logo, timezone, language, order deadline, …).
+   * Foundation field — populated by Phase 1. See {@link GroupSettings}.
+   */
+  settings?: GroupSettings;
   created: string;
   updated: string;
+}
+
+/**
+ * Per-group configuration. Every field is optional; unset values inherit from
+ * the global {@link AppSettings} defaults. Extended in later phases.
+ */
+export interface GroupSettings {
+  logo?: string;
+  language?: string;
+  timezone?: string;
+  currency?: string;
+  /** Daily order cut-off, "HH:MM". */
+  order_deadline?: string;
+  default_export?: ExportFormat;
 }
 
 export interface GroupMembership {
@@ -76,6 +151,28 @@ export interface GroupWithStats extends Group {
   orderCount: number;
 }
 
+/**
+ * Portable snapshot of a group's configuration plus its meal plans, used by the
+ * group export/import feature. Deliberately excludes user-specific data
+ * (memberships, orders) so a group can be moved between installations.
+ */
+export interface GroupExport {
+  version: 1;
+  exported_at: string;
+  group: {
+    name: string;
+    description: string;
+    color: string;
+    settings?: GroupSettings;
+  };
+  meal_plans: Array<{
+    year: number;
+    week_number: number;
+    status: WeekStatus;
+    meals: DayMeals;
+  }>;
+}
+
 // ─── Meals ───────────────────────────────────────────────────────────────────
 
 export interface MealItem {
@@ -86,6 +183,8 @@ export interface MealItem {
   vegan?: boolean;
   allergens?: string[];
   additives?: string[];
+  /** Extended description shown when the dish is expanded (click to open). */
+  description?: string;
 }
 
 export interface DayMeals {
@@ -171,12 +270,15 @@ export interface MaintenanceInfo {
 // ─── UI Types ─────────────────────────────────────────────────────────────────
 
 export type ViewType =
+  | 'dashboard'
   | 'current'
   | 'upcoming'
   | 'archive'
   | 'users'
   | 'groups'
   | 'stats'
+  | 'trash'
+  | 'settings'
   | 'shared-plans';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -230,6 +332,115 @@ export interface ExportOptions {
   groupName?: string;
 }
 
+// ─── Audit Log ─────────────────────────────────────────────────────────────────
+
+export type AuditAction =
+  | 'login'
+  | 'logout'
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'restore'
+  | 'import'
+  | 'export'
+  | 'permission_change'
+  | 'group_create';
+
+export interface AuditLog {
+  id: string;
+  user?: string;
+  user_name: string;
+  action: AuditAction;
+  /** Collection or domain entity affected, e.g. "users", "meal_plans". */
+  entity_type?: string;
+  entity_id?: string;
+  group?: string;
+  /** Free-form structured context (before/after, counts, …). */
+  details?: Record<string, unknown>;
+  created: string;
+}
+
+// ─── Trash (soft delete) ───────────────────────────────────────────────────────
+
+export interface TrashEntry {
+  id: string;
+  /** Source collection the record was deleted from. */
+  collection_name: string;
+  /** Original record id, for reference / dedupe. */
+  record_id: string;
+  /** Full JSON snapshot used to restore the record. */
+  data: Record<string, unknown>;
+  deleted_by?: string;
+  deleted_by_name: string;
+  group?: string;
+  created: string;
+}
+
+// ─── Plan history / versioning (Phase 3) ────────────────────────────────────────
+
+export type PlanHistoryAction =
+  | 'created'
+  | 'meal_added'
+  | 'meal_removed'
+  | 'meals_updated'
+  | 'status_changed';
+
+export interface PlanHistoryEntry {
+  id: string;
+  meal_plan: string;
+  group?: string;
+  user?: string;
+  user_name: string;
+  action: PlanHistoryAction;
+  /** Affected day, when the change is day-scoped. */
+  day?: string;
+  /** Human-readable one-line summary. */
+  summary: string;
+  /** Snapshot of the affected slice before the change. */
+  before?: unknown;
+  /** Snapshot after the change. */
+  after?: unknown;
+  created: string;
+}
+
+// ─── Notifications (Phase 3) ─────────────────────────────────────────────────────
+
+export type NotificationType =
+  | 'order_deadline'
+  | 'new_week'
+  | 'plan_changed'
+  | 'new_group'
+  | 'admin_message'
+  | 'system';
+
+export interface Notification {
+  id: string;
+  /** Recipient user. Empty = broadcast handled at creation time (one row per user). */
+  user?: string;
+  group?: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  created: string;
+}
+
+// ─── Global App Settings ───────────────────────────────────────────────────────
+
+/**
+ * System-wide defaults configured by the superuser. New groups inherit these
+ * unless overridden in their own {@link GroupSettings}.
+ */
+export interface AppSettings {
+  default_color: string;
+  default_language: string;
+  default_timezone: string;
+  default_currency: string;
+  default_order_deadline: string;
+  default_export: ExportFormat;
+  default_theme: ThemeMode;
+}
+
 // ─── Stats ───────────────────────────────────────────────────────────────────
 
 export interface MealStat {
@@ -245,4 +456,57 @@ export interface WeekStats {
   popularMeals: MealStat[];
   ordersByDay: Record<string, number>;
   averagePerPerson: number;
+}
+
+// ─── Statistics suite (Phase 2) ────────────────────────────────────────────────
+
+export interface DietStat {
+  vegetarian: number;
+  vegan: number;
+  other: number;
+  total: number;
+}
+
+export interface AllergenStat {
+  code: string;
+  label: string;
+  count: number;
+}
+
+/** One point in a weekly time series (orders/revenue per calendar week). */
+export interface TrendPoint {
+  label: string;
+  year: number;
+  week: number;
+  orders: number;
+  revenue: number;
+}
+
+export interface GroupComparisonRow {
+  groupId: string;
+  groupName: string;
+  orders: number;
+  revenue: number;
+  users: number;
+}
+
+/** Full statistics snapshot for a group (or the whole system). */
+export interface Statistics {
+  totalOrders: number;
+  totalRevenue: number;
+  uniqueUsers: number;
+  averagePerOrder: number;
+  popularMeals: MealStat[];
+  ordersByDay: Record<string, number>;
+  diet: DietStat;
+  allergens: AllergenStat[];
+  trend: TrendPoint[];
+}
+
+/** Lightweight summary of a single week's OrdersByUser, used by dashboards. */
+export interface OrdersSummary {
+  orders: number;
+  revenue: number;
+  participants: number;
+  topMeal?: { number: string; name: string; count: number };
 }

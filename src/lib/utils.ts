@@ -92,6 +92,13 @@ export function weekLabel(year: number, week: number): string {
   return `KW ${week} / ${year}`;
 }
 
+/** The calendar week after the current one, rolling the year over at week 52. */
+export function nextCalendarWeek(): { year: number; week: number } {
+  const week = getCurrentWeekNumber();
+  const year = getCurrentYear();
+  return week >= 52 ? { year: year + 1, week: 1 } : { year, week: week + 1 };
+}
+
 export function getWeekDates(year: number, week: number): Date[] {
   const jan1 = new Date(year, 0, 1);
   const daysToMonday = (8 - jan1.getDay()) % 7;

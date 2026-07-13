@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { isLocked } from '../lib/utils';
 import { AddMealForm } from './AddMealForm';
 import type { MealItem, AuthUser, OrdersByUser } from '../types';
@@ -75,45 +75,12 @@ export const MealCard = memo(function MealCard({
           <p className="meal-card__empty">Noch kein Menü eingetragen</p>
         ) : (
           sortedMeals.map((m, i) => (
-            <div key={`${m.number}-${i}`} className="menu-item">
-              <div className="menu-item__info">
-                <span className="menu-item__number">#{m.number}</span>
-                <span className="menu-item__name">{m.name}</span>
-                <span className="menu-item__price">
-                  {typeof m.price === 'number' ? m.price.toFixed(2).replace('.', ',') : m.price} €
-                </span>
-                {(m.vegan || m.vegetarian) && (
-                  <span
-                    className={`diet-badge${m.vegan ? ' diet-badge--vegan' : ' diet-badge--veg'}`}
-                  >
-                    {m.vegan ? '🌱 Vegan' : '🥦 Vegetarisch'}
-                  </span>
-                )}
-                {m.allergens && m.allergens.length > 0 && (
-                  <span className="allergen-indicator">
-                    {m.allergens.map(a => (
-                      <span
-                        key={a}
-                        className="allergen-chip-display"
-                        title={ALLERGENS[a] ?? a}
-                      >
-                        {a}: {ALLERGENS[a] ?? a}
-                      </span>
-                    ))}
-                  </span>
-                )}
-              </div>
-              {!isArchive && currentUser?.is_admin && !dayLocked && (
-                <button
-                  className="btn-icon btn-icon--danger"
-                  onClick={() => onRemoveMeal?.(day, i)}
-                  title="Menü entfernen"
-                  aria-label={`Menü #${m.number} entfernen`}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+            <MenuItemRow
+              key={`${m.number}-${i}`}
+              meal={m}
+              canRemove={!isArchive && !!currentUser?.is_admin && !dayLocked}
+              onRemove={() => onRemoveMeal?.(day, i)}
+            />
           ))
         )}
       </div>
@@ -186,3 +153,94 @@ export const MealCard = memo(function MealCard({
     </div>
   );
 });
+
+// ── Single menu item: name/price always visible; details expand on click ────────
+
+function MenuItemRow({
+  meal,
+  canRemove,
+  onRemove,
+}: {
+  meal: MealItem;
+  canRemove: boolean;
+  onRemove: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const price =
+    typeof meal.price === 'number' ? meal.price.toFixed(2).replace('.', ',') : meal.price;
+  const hasDetails =
+    !!meal.description ||
+    (meal.allergens?.length ?? 0) > 0 ||
+    (meal.additives?.length ?? 0) > 0;
+
+  return (
+    <div className={`menu-item${open ? ' menu-item--open' : ''}`}>
+      <div className="menu-item__row">
+        <button
+          type="button"
+          className="menu-item__main"
+          onClick={() => hasDetails && setOpen(o => !o)}
+          aria-expanded={hasDetails ? open : undefined}
+          disabled={!hasDetails}
+          title={hasDetails ? 'Details anzeigen' : undefined}
+        >
+          <span className="menu-item__number">#{meal.number}</span>
+          <span className="menu-item__name">{meal.name}</span>
+          {(meal.vegan || meal.vegetarian) && (
+            <span
+              className={`menu-item__diet${meal.vegan ? ' menu-item__diet--vegan' : ' menu-item__diet--veg'}`}
+              title={meal.vegan ? 'Vegan' : 'Vegetarisch'}
+            >
+              {meal.vegan ? '🌱' : '🥦'}
+            </span>
+          )}
+          <span className="menu-item__price">{price} €</span>
+          {hasDetails && <span className="menu-item__chevron" aria-hidden="true">{open ? '▲' : '▼'}</span>}
+        </button>
+        {canRemove && (
+          <button
+            className="btn-icon btn-icon--danger"
+            onClick={onRemove}
+            title="Menü entfernen"
+            aria-label={`Menü #${meal.number} entfernen`}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {open && hasDetails && (
+        <div className="menu-item__details">
+          {meal.description && <p className="menu-item__desc">{meal.description}</p>}
+          {(meal.vegan || meal.vegetarian) && (
+            <p className="menu-item__detail-line">
+              <strong>Ernährung:</strong> {meal.vegan ? 'Vegan' : 'Vegetarisch'}
+            </p>
+          )}
+          {meal.allergens && meal.allergens.length > 0 && (
+            <div className="menu-item__detail-line">
+              <strong>Allergene:</strong>
+              <span className="menu-item__chips">
+                {meal.allergens.map(a => (
+                  <span key={a} className="menu-item__chip" title={ALLERGENS[a] ?? a}>
+                    {a}: {ALLERGENS[a] ?? a}
+                  </span>
+                ))}
+              </span>
+            </div>
+          )}
+          {meal.additives && meal.additives.length > 0 && (
+            <div className="menu-item__detail-line">
+              <strong>Zusatzstoffe:</strong>
+              <span className="menu-item__chips">
+                {meal.additives.map(a => (
+                  <span key={a} className="menu-item__chip">{a}</span>
+                ))}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,41 +1,42 @@
-import { pb, COLLECTIONS } from '../lib/pocketbase';
+import { repositories } from '../repositories';
 import type { Order, OrdersByUser, DayOfWeek, AuthUser } from '../types';
+
+const orders = repositories.orders;
 
 export const orderService = {
   async getOrdersForPlan(planId: string): Promise<Order[]> {
-    return pb.collection(COLLECTIONS.ORDERS).getFullList<Order>({
-      filter: `meal_plan = "${planId}"`,
-      sort: 'user_name,day',
-    });
+    return orders.getFullList({ filter: `meal_plan = "${planId}"`, sort: 'user_name,day' });
   },
 
   async getOrdersForPlanAndGroup(planId: string, groupId: string): Promise<Order[]> {
-    return pb.collection(COLLECTIONS.ORDERS).getFullList<Order>({
+    return orders.getFullList({
       filter: `meal_plan = "${planId}" && group = "${groupId}"`,
       sort: 'user_name,day',
     });
   },
 
   async getOrdersForGroup(groupId: string): Promise<Order[]> {
-    return pb.collection(COLLECTIONS.ORDERS).getFullList<Order>({
-      filter: `group = "${groupId}"`,
-      sort: '-created',
-    });
+    return orders.getFullList({ filter: `group = "${groupId}"`, sort: '-created' });
+  },
+
+  /** All orders across every group (superuser statistics / comparison). */
+  async getAllOrders(): Promise<Order[]> {
+    return orders.getFullList({ sort: '-created' });
   },
 
   async getOrdersByUser(planId: string): Promise<OrdersByUser> {
-    const orders = await orderService.getOrdersForPlan(planId);
-    return orderService.normalizeOrders(orders);
+    const list = await orderService.getOrdersForPlan(planId);
+    return orderService.normalizeOrders(list);
   },
 
   async getOrdersByUserForGroup(planId: string, groupId: string): Promise<OrdersByUser> {
-    const orders = await orderService.getOrdersForPlanAndGroup(planId, groupId);
-    return orderService.normalizeOrders(orders);
+    const list = await orderService.getOrdersForPlanAndGroup(planId, groupId);
+    return orderService.normalizeOrders(list);
   },
 
-  normalizeOrders(orders: Order[]): OrdersByUser {
+  normalizeOrders(list: Order[]): OrdersByUser {
     const result: OrdersByUser = {};
-    orders.forEach(order => {
+    list.forEach(order => {
       if (!result[order.user_name]) result[order.user_name] = {};
       result[order.user_name][order.day] = {
         id: order.id,
@@ -59,7 +60,7 @@ export const orderService = {
     existingOrderId?: string
   ): Promise<Order> {
     if (existingOrderId) {
-      return pb.collection(COLLECTIONS.ORDERS).update<Order>(existingOrderId, {
+      return orders.update(existingOrderId, {
         meal_number,
         meal_name,
         meal_price,
@@ -67,7 +68,7 @@ export const orderService = {
       });
     }
 
-    return pb.collection(COLLECTIONS.ORDERS).create<Order>({
+    return orders.create({
       meal_plan: planId,
       group: groupId,
       user: user.id,
@@ -82,24 +83,20 @@ export const orderService = {
   },
 
   async deleteOrder(orderId: string): Promise<void> {
-    await pb.collection(COLLECTIONS.ORDERS).delete(orderId);
+    await orders.delete(orderId);
   },
 
   async deleteOrdersForUser(planId: string, userId: string, groupId?: string): Promise<void> {
     const filter = groupId
       ? `meal_plan = "${planId}" && user = "${userId}" && group = "${groupId}"`
       : `meal_plan = "${planId}" && user = "${userId}"`;
-    const orders = await pb.collection(COLLECTIONS.ORDERS).getFullList<Order>({ filter });
-    await Promise.all(orders.map(o => pb.collection(COLLECTIONS.ORDERS).delete(o.id)));
+    const list = await orders.getFullList({ filter });
+    await Promise.all(list.map(o => orders.delete(o.id)));
   },
 
   async deleteAllOrdersForPlan(planId: string): Promise<void> {
-    const orders = await pb
-      .collection(COLLECTIONS.ORDERS)
-      .getFullList<Order>({ filter: `meal_plan = "${planId}"` });
-    await Promise.all(
-      orders.map(o => pb.collection(COLLECTIONS.ORDERS).delete(o.id))
-    );
+    const list = await orders.getFullList({ filter: `meal_plan = "${planId}"` });
+    await Promise.all(list.map(o => orders.delete(o.id)));
   },
 
   // Convert Orders to legacy WeekData format for backward compat

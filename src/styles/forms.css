@@ -648,3 +648,60 @@ select.form-input {
   .add-meal-form__row { flex-direction: column; align-items: stretch; }
   .order-form__controls { flex-direction: column; align-items: stretch; }
 }
+
+/* ── Phase 1: group form modes & layout ───────────────────────────────────── */
+.form-mode-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 14px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+}
+.form-mode-switch__btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: calc(var(--radius) - 2px);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.form-mode-switch__btn--active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+.form-section-label {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  margin: 18px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 520px) {
+  .form-grid-2 { grid-template-columns: 1fr; }
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.add-meal-form__desc { width: 100%; margin-top: 6px; }

@@ -23,4 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 *.env
-dist
+
+# Graphify generated cache, snapshots & internal state (regenerate via `graphify update .`)
+graphify-out/cache/
+graphify-out/20*/
+graphify-out/.graphify_*
+graphify-out/graph.html
+
+# PocketBase local data (never commit a real DB)
+pb_data/
+pocketbase
+pb_migrations/

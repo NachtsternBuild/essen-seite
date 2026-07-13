@@ -1,4 +1,4 @@
-import { pb, COLLECTIONS } from '../lib/pocketbase';
+import { repositories } from '../repositories';
 import type {
   MealPlan,
   DayMeals,
@@ -7,13 +7,23 @@ import type {
   SharedPlan,
   SyncMode,
 } from '../types';
-import { getCurrentWeekNumber, getCurrentYear, weekLabel } from '../lib/utils';
+import { getCurrentWeekNumber, getCurrentYear, weekLabel, nextCalendarWeek } from '../lib/utils';
+
+/** Default year/week for a new plan: next week for 'upcoming', else this week. */
+function defaultWeek(status: WeekStatus): { year: number; week: number } {
+  return status === 'upcoming'
+    ? nextCalendarWeek()
+    : { year: getCurrentYear(), week: getCurrentWeekNumber() };
+}
+
+const mealPlans = repositories.mealPlans;
+const sharedPlans = repositories.sharedPlans;
 
 export const mealService = {
   // ── Meal Plans ─────────────────────────────────────────────────────────────
 
   async getPlansForGroup(groupId: string): Promise<MealPlan[]> {
-    return pb.collection(COLLECTIONS.MEAL_PLANS).getFullList<MealPlan>({
+    return mealPlans.getFullList({
       filter: `group = "${groupId}"`,
       sort: '-year,-week_number',
     });
@@ -23,15 +33,7 @@ export const mealService = {
     groupId: string,
     status: WeekStatus
   ): Promise<MealPlan | null> {
-    try {
-      return await pb
-        .collection(COLLECTIONS.MEAL_PLANS)
-        .getFirstListItem<MealPlan>(
-          `group = "${groupId}" && status = "${status}"`
-        );
-    } catch {
-      return null;
-    }
+    return mealPlans.getFirst(`group = "${groupId}" && status = "${status}"`);
   },
 
   async getActivePlans(
@@ -51,10 +53,11 @@ export const mealService = {
     year?: number,
     week?: number
   ): Promise<MealPlan> {
-    return pb.collection(COLLECTIONS.MEAL_PLANS).create<MealPlan>({
+    const def = defaultWeek(status);
+    return mealPlans.create({
       group: groupId,
-      year: year ?? getCurrentYear(),
-      week_number: week ?? getCurrentWeekNumber(),
+      year: year ?? def.year,
+      week_number: week ?? def.week,
       status,
       meals: {},
     });
@@ -66,10 +69,11 @@ export const mealService = {
     status: WeekStatus,
     syncMode: SyncMode = 'copy'
   ): Promise<MealPlan> {
-    return pb.collection(COLLECTIONS.MEAL_PLANS).create<MealPlan>({
+    const def = defaultWeek(status);
+    return mealPlans.create({
       group: groupId,
-      year: getCurrentYear(),
-      week_number: getCurrentWeekNumber(),
+      year: def.year,
+      week_number: def.week,
       status,
       meals: sourcePlan.meals,
       synced_from: syncMode === 'sync' ? sourcePlan.id : undefined,
@@ -78,9 +82,7 @@ export const mealService = {
   },
 
   async updateMeals(planId: string, meals: DayMeals): Promise<MealPlan> {
-    return pb
-      .collection(COLLECTIONS.MEAL_PLANS)
-      .update<MealPlan>(planId, { meals });
+    return mealPlans.update(planId, { meals });
   },
 
   async addMealToDay(
@@ -109,13 +111,11 @@ export const mealService = {
   },
 
   async updateStatus(planId: string, status: WeekStatus): Promise<MealPlan> {
-    return pb
-      .collection(COLLECTIONS.MEAL_PLANS)
-      .update<MealPlan>(planId, { status });
+    return mealPlans.update(planId, { status });
   },
 
   async delete(planId: string): Promise<void> {
-    await pb.collection(COLLECTIONS.MEAL_PLANS).delete(planId);
+    await mealPlans.delete(planId);
   },
 
   // ── Week Rotation ──────────────────────────────────────────────────────────
@@ -146,7 +146,7 @@ export const mealService = {
     name: string,
     description?: string
   ): Promise<SharedPlan> {
-    return pb.collection(COLLECTIONS.SHARED_PLANS).create<SharedPlan>({
+    return sharedPlans.create({
       source_plan: plan.id,
       source_group: groupId,
       source_group_name: groupName,
@@ -160,9 +160,7 @@ export const mealService = {
   },
 
   async getSharedPlans(): Promise<SharedPlan[]> {
-    return pb.collection(COLLECTIONS.SHARED_PLANS).getFullList<SharedPlan>({
-      sort: '-created',
-    });
+    return sharedPlans.getFullList({ sort: '-created' });
   },
 
   async adoptSharedPlan(
@@ -171,10 +169,11 @@ export const mealService = {
     mode: SyncMode,
     status: WeekStatus = 'upcoming'
   ): Promise<MealPlan> {
-    return pb.collection(COLLECTIONS.MEAL_PLANS).create<MealPlan>({
+    const def = defaultWeek(status);
+    return mealPlans.create({
       group: targetGroupId,
-      year: getCurrentYear(),
-      week_number: getCurrentWeekNumber(),
+      year: def.year,
+      week_number: def.week,
       status,
       meals: sharedPlan.meals,
       synced_from: mode === 'sync' ? sharedPlan.source_plan : undefined,
@@ -183,6 +182,6 @@ export const mealService = {
   },
 
   async deleteSharedPlan(id: string): Promise<void> {
-    await pb.collection(COLLECTIONS.SHARED_PLANS).delete(id);
+    await sharedPlans.delete(id);
   },
 };

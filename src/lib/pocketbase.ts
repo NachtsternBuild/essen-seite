@@ -14,6 +14,18 @@ export const COLLECTIONS = {
   ORDERS: 'orders',
   SHARED_PLANS: 'shared_plans',
   SETTINGS: 'settings',
+  // ── Phase 0 foundation collections ──
+  /** Custom + standard roles, each carrying a list of permission keys. */
+  ROLES: 'roles',
+  /** Append-only audit trail (login, CRUD, import/export, permission changes). */
+  AUDIT_LOGS: 'audit_logs',
+  /** Soft-deleted records awaiting restore or purge. */
+  TRASH: 'trash',
+  // ── Phase 3 collections ──
+  /** Per-change history of meal plans (who/when/before/after). */
+  PLAN_HISTORY: 'plan_history',
+  /** User/group notifications (deadline, new week, plan changed, …). */
+  NOTIFICATIONS: 'notifications',
   /** Legacy – single-document storage, kept for migration */
   MEALS_DATA: 'meals_data',
 } as const;

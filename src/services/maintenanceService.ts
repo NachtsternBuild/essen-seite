@@ -1,47 +1,45 @@
-import { pb, COLLECTIONS } from '../lib/pocketbase';
+import { BaseRepository } from '../repositories';
+import { COLLECTIONS } from '../lib/pocketbase';
 import type { MaintenanceSettings } from '../types';
 
 const SETTINGS_KEY = 'maintenance';
 
+/** Untyped key/value settings collection. */
+interface SettingRecord {
+  id: string;
+  key: string;
+  value: unknown;
+}
+
+const settings = new BaseRepository<SettingRecord>(COLLECTIONS.SETTINGS);
+
 export const maintenanceService = {
   async get(): Promise<MaintenanceSettings> {
-    try {
-      const rec = await pb
-        .collection(COLLECTIONS.SETTINGS)
-        .getFirstListItem(`key = "${SETTINGS_KEY}"`);
-      return rec.value as MaintenanceSettings;
-    } catch {
-      return { active: false, start_time: '', duration: '' };
-    }
+    const rec = await settings.getFirst(`key = "${SETTINGS_KEY}"`);
+    if (!rec) return { active: false, start_time: '', duration: '' };
+    return rec.value as MaintenanceSettings;
   },
 
-  async set(settings: MaintenanceSettings): Promise<void> {
-    try {
-      const rec = await pb
-        .collection(COLLECTIONS.SETTINGS)
-        .getFirstListItem(`key = "${SETTINGS_KEY}"`);
-      await pb
-        .collection(COLLECTIONS.SETTINGS)
-        .update(rec.id, { value: settings });
-    } catch {
-      // Record doesn't exist — create it
-      await pb
-        .collection(COLLECTIONS.SETTINGS)
-        .create({ key: SETTINGS_KEY, value: settings });
+  async set(value: MaintenanceSettings): Promise<void> {
+    const rec = await settings.getFirst(`key = "${SETTINGS_KEY}"`);
+    if (rec) {
+      await settings.update(rec.id, { value });
+    } else {
+      await settings.create({ key: SETTINGS_KEY, value });
     }
   },
 
   computeInfo(
-    settings: MaintenanceSettings
+    settingsValue: MaintenanceSettings
   ): { hoursUntil: number; duration: string; isUrgent: boolean; message?: string } | null {
-    if (!settings.active || !settings.start_time) return null;
-    const start = new Date(settings.start_time);
+    if (!settingsValue.active || !settingsValue.start_time) return null;
+    const start = new Date(settingsValue.start_time);
     const diffHours = Math.round((start.getTime() - Date.now()) / 3_600_000);
     return {
       hoursUntil: diffHours,
-      duration: settings.duration || 'unbekannt',
+      duration: settingsValue.duration || 'unbekannt',
       isUrgent: diffHours <= 2 && diffHours >= 0,
-      message: settings.message,
+      message: settingsValue.message,
     };
   },
 };

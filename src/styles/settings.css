@@ -1,0 +1,100 @@
+/* ── Phase 4: settings area ───────────────────────────────────────────────── */
+
+.settings { display: flex; flex-direction: column; gap: 14px; }
+
+.settings__tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 4px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  align-self: flex-start;
+}
+.settings__tab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: calc(var(--radius) - 2px);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.settings__tab--active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.settings__panel { padding: 20px; }
+.settings-section { display: flex; flex-direction: column; gap: 18px; }
+
+/* Theme mode choices */
+.settings-theme-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+.settings-choice {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.settings-choice:hover { border-color: var(--border-strong); }
+.settings-choice--active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  font-weight: 600;
+}
+
+/* Accent swatches */
+.settings-accent-grid { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.settings-accent {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+.settings-accent--active {
+  border-color: var(--text);
+  outline: 2px solid var(--surface);
+  outline-offset: -4px;
+}
+.settings-accent--custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.settings-accent--custom input[type="color"] {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Toggle row */
+.settings-toggle-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.settings-toggle-row input { margin-top: 4px; }
+.settings-toggle-row .form-hint { display: block; }
+
+/* Info definition list */
+.settings-info { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.settings-info > div { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.settings-info dt { color: var(--text-muted); }
+.settings-info dd { margin: 0; font-weight: 600; color: var(--text); }

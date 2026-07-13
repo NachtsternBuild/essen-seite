@@ -20,16 +20,30 @@ import { GroupSelector } from './components/groups/GroupSelector';
 import { ThemeToggle } from './components/theme/ThemeToggle';
 import { Spinner } from './components/shared/Spinner';
 import { EmptyState } from './components/shared/EmptyState';
+import { Dashboard } from './components/dashboard/Dashboard';
+import { Statistics } from './components/stats/Statistics';
+import { NotificationBell } from './components/notifications/NotificationBell';
+import { PlanHistoryModal } from './components/plans/PlanHistoryModal';
+import { TemplateModal } from './components/plans/TemplateModal';
+import { TrashPanel } from './components/trash/TrashPanel';
+import { Settings } from './components/settings/Settings';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useTemplates } from './hooks/useTemplates';
+import { useFeatureFlags } from './hooks/useFeatureFlags';
 
 // ── Types ───────────────────────────────────────────────────────────────────────
 import type { ViewType, DayOfWeek, MealItem } from './types';
 import { DAYS_OF_WEEK } from './lib/pocketbase';
 import { initials, roleName } from './lib/utils';
+import { usePermissions } from './context/PermissionContext';
 
 // ── App ─────────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [view, setView] = useState<ViewType>('current');
+  const [view, setView] = useState<ViewType>('dashboard');
+  const [historyPlanId, setHistoryPlanId] = useState<string | null>(null);
+  const { can } = usePermissions();
+  const networkOnline = useOnlineStatus();
 
   // ── Auth ──────────────────────────────────────────────────────────────────────
   const {
@@ -41,6 +55,8 @@ export default function App() {
     handleLogin,
     handleLogout,
   } = useAuthentication();
+
+  const { statisticsEnabled, setStatisticsEnabled } = useFeatureFlags(isSuperuser);
 
   // ── Groups ────────────────────────────────────────────────────────────────────
   const { activeGroup, allGroups } = useGroups(currentUser);
@@ -60,11 +76,25 @@ export default function App() {
     previous: previousPlan,
     isLoading: isLoadingMeals,
     isUsingLinkedPlan,
+    refresh: refreshMeals,
     addMeal,
     removeMeal,
     rotateWeek,
     createPlan,
-  } = useMeals(groupId, linkedGroupId);
+    deletePlan,
+  } = useMeals(groupId, linkedGroupId, currentUser);
+
+  // ── Plan templates (shared plans) ──────────────────────────────────────────────
+  const templates = useTemplates(activeGroup, currentUser);
+  const [templatePicker, setTemplatePicker] = useState<'current' | 'upcoming' | null>(null);
+  const openTemplatePicker = useCallback(
+    (target: 'current' | 'upcoming') => {
+      setTemplatePicker(target);
+      templates.reload();
+    },
+    [templates]
+  );
+  const publishTemplate = templates.publish;
 
   const isSharedPlan = isUsingLinkedPlan;
 
@@ -155,8 +185,8 @@ export default function App() {
     [upcomingPlan, placeUpcomingOrder]
   );
 
-  // ── Server status (derived from data loading) ─────────────────────────────────
-  const isOnline = !isLoadingMeals && !isLoadingCurrentOrders;
+  // ── Server status (real network + data-loading state) ─────────────────────────
+  const isOnline = networkOnline && !isLoadingMeals && !isLoadingCurrentOrders;
 
   // ── Login page ────────────────────────────────────────────────────────────────
   if (!isAuthenticated || !currentUser) {
@@ -187,6 +217,12 @@ export default function App() {
 
         <nav className="sidebar__nav">
           <NavItem
+            icon="📊"
+            label="Übersicht"
+            active={view === 'dashboard'}
+            onClick={() => setView('dashboard')}
+          />
+          <NavItem
             icon="📅"
             label="Planung"
             active={view === 'upcoming'}
@@ -204,6 +240,14 @@ export default function App() {
             active={view === 'archive'}
             onClick={() => setView('archive')}
           />
+          {can('VIEW_STATISTICS') && statisticsEnabled && (
+            <NavItem
+              icon="📈"
+              label="Statistiken"
+              active={view === 'stats'}
+              onClick={() => setView('stats')}
+            />
+          )}
           {isAdmin && (
             <NavItem
               icon="👥"
@@ -220,6 +264,20 @@ export default function App() {
               onClick={() => setView('groups')}
             />
           )}
+          {can('MANAGE_TRASH') && (
+            <NavItem
+              icon="🗑"
+              label="Papierkorb"
+              active={view === 'trash'}
+              onClick={() => setView('trash')}
+            />
+          )}
+          <NavItem
+            icon="⚙️"
+            label="Einstellungen"
+            active={view === 'settings'}
+            onClick={() => setView('settings')}
+          />
         </nav>
 
         <div className="sidebar__footer">
@@ -239,6 +297,7 @@ export default function App() {
           </div>
 
           <div className="sidebar__footer-row">
+            <NotificationBell currentUser={currentUser} />
             <ThemeToggle />
             <div
               className={`connection-badge${isOnline ? ' connection-badge--online' : ' connection-badge--offline'}`}
@@ -292,8 +351,71 @@ export default function App() {
           </div>
         )}
 
+        {/* Dashboard – available regardless of group selection */}
+        {view === 'dashboard' && currentUser && (
+          <>
+            <div className="page-header">
+              <h2 className="page-title">📊 Übersicht</h2>
+            </div>
+            <Dashboard
+              currentUser={currentUser}
+              isSuperuser={isSuperuser}
+              isAdmin={isAdmin}
+              activeGroup={activeGroup}
+              allGroups={allGroups}
+              allUsers={allUsers}
+              currentPlan={currentPlan}
+              currentOrders={currentOrders}
+              upcomingPlan={upcomingPlan}
+              upcomingOrders={upcomingOrders}
+              onNavigate={setView}
+            />
+          </>
+        )}
+
+        {/* Statistics */}
+        {view === 'stats' && statisticsEnabled && (
+          <>
+            <div className="page-header">
+              <h2 className="page-title">📈 Statistiken</h2>
+            </div>
+            <Statistics
+              groupId={groupId}
+              groupName={activeGroup?.name}
+              isSuperuser={isSuperuser}
+              comparisonGroups={isSuperuser ? allGroups : undefined}
+            />
+          </>
+        )}
+
+        {/* Trash (Papierkorb) */}
+        {view === 'trash' && can('MANAGE_TRASH') && (
+          <>
+            <div className="page-header">
+              <h2 className="page-title">🗑 Papierkorb</h2>
+            </div>
+            <TrashPanel currentUser={currentUser} groupId={groupId} />
+          </>
+        )}
+
+        {/* Settings */}
+        {view === 'settings' && (
+          <>
+            <div className="page-header">
+              <h2 className="page-title">⚙️ Einstellungen</h2>
+            </div>
+            <Settings
+              currentUser={currentUser}
+              isSuperuser={isSuperuser}
+              onNavigate={setView}
+              statisticsEnabled={statisticsEnabled}
+              setStatisticsEnabled={setStatisticsEnabled}
+            />
+          </>
+        )}
+
         {/* No group selected */}
-        {!activeGroup && view !== 'groups' && (
+        {!activeGroup && view !== 'groups' && view !== 'dashboard' && view !== 'stats' && view !== 'trash' && view !== 'settings' && (
           <EmptyState
             icon="🏢"
             title="Keine Gruppe ausgewählt"
@@ -339,6 +461,38 @@ export default function App() {
                       onClick={rotateWeek}
                     >
                       Woche abschließen & rotieren
+                    </button>
+                  )}
+                  {!isSharedPlan && (
+                    <button
+                      className="btn btn--ghost"
+                      onClick={() => openTemplatePicker('upcoming')}
+                    >
+                      📋 Aus Vorlage
+                    </button>
+                  )}
+                  {!isSharedPlan && upcomingPlan && (
+                    <button
+                      className="btn btn--ghost"
+                      onClick={() => publishTemplate(upcomingPlan)}
+                    >
+                      ↗ Als Vorlage
+                    </button>
+                  )}
+                  {upcomingPlan && (
+                    <button
+                      className="btn btn--ghost"
+                      onClick={() => setHistoryPlanId(upcomingPlan.id)}
+                    >
+                      🕓 Verlauf
+                    </button>
+                  )}
+                  {!isSharedPlan && upcomingPlan && (
+                    <button
+                      className="btn btn--ghost btn--danger-outline"
+                      onClick={() => deletePlan(upcomingPlan)}
+                    >
+                      Plan löschen
                     </button>
                   )}
                 </div>
@@ -403,7 +557,7 @@ export default function App() {
             <div className="page-header">
               <h2 className="page-title">🗓 Aktuelle Woche</h2>
               {isAdmin && (
-                <>
+                <div className="page-header__actions">
                   {isSharedPlan && (
                     <button
                       className="btn btn--primary"
@@ -420,7 +574,39 @@ export default function App() {
                       + Plan anlegen
                     </button>
                   )}
-                </>
+                  {!isSharedPlan && currentPlan && (
+                    <button
+                      className="btn btn--ghost"
+                      onClick={() => openTemplatePicker('current')}
+                    >
+                      📋 Aus Vorlage
+                    </button>
+                  )}
+                  {!isSharedPlan && currentPlan && (
+                    <button
+                      className="btn btn--ghost"
+                      onClick={() => publishTemplate(currentPlan)}
+                    >
+                      ↗ Als Vorlage
+                    </button>
+                  )}
+                  {currentPlan && (
+                    <button
+                      className="btn btn--ghost"
+                      onClick={() => setHistoryPlanId(currentPlan.id)}
+                    >
+                      🕓 Verlauf
+                    </button>
+                  )}
+                  {!isSharedPlan && currentPlan && (
+                    <button
+                      className="btn btn--ghost btn--danger-outline"
+                      onClick={() => deletePlan(currentPlan)}
+                    >
+                      Plan löschen
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
@@ -538,6 +724,34 @@ export default function App() {
             <GroupManagement currentUser={currentUser} />
           </>
         )}
+
+        <PlanHistoryModal
+          planId={historyPlanId}
+          open={historyPlanId !== null}
+          onClose={() => setHistoryPlanId(null)}
+        />
+
+        <TemplateModal
+          open={templatePicker !== null}
+          onClose={() => setTemplatePicker(null)}
+          templates={templates.items}
+          isLoading={templates.isLoading}
+          willReplace={
+            templatePicker === 'current' ? !!currentPlan : templatePicker === 'upcoming' ? !!upcomingPlan : false
+          }
+          onAdopt={(template, mode) =>
+            templates.adopt(
+              template,
+              mode,
+              templatePicker === 'current' ? 'current' : 'upcoming',
+              templatePicker === 'current' ? currentPlan : upcomingPlan,
+              () => {
+                refreshMeals();
+                setTemplatePicker(null);
+              }
+            )
+          }
+        />
       </main>
     </div>
   );

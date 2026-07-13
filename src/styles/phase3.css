@@ -1,0 +1,117 @@
+/* ── Phase 3: notifications, plan history, trash ──────────────────────────── */
+
+/* Notification bell + panel */
+.notif { position: relative; display: inline-flex; }
+.notif__bell {
+  position: relative;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 6px;
+  border-radius: var(--radius);
+  color: var(--sidebar-text, var(--text));
+}
+.notif__bell:hover { background: rgba(255, 255, 255, .08); }
+.notif__badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: .65rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  color: #fff;
+  background: var(--color-danger);
+  border-radius: 999px;
+}
+.notif__panel {
+  /* Rendered in a portal (see NotificationBell.tsx) with bottom/left set inline
+     from the bell's own getBoundingClientRect, so it escapes the sidebar's
+     overflow:auto clipping instead of being cut off. */
+  position: fixed;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+}
+.notif__panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+.notif__empty { padding: 18px 12px; color: var(--text-muted); font-size: .9rem; text-align: center; }
+.notif__list { list-style: none; margin: 0; padding: 0; }
+.notif__item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  align-items: flex-start;
+}
+.notif__item:hover { background: var(--surface-2); }
+.notif__item--unread { background: var(--accent-light, var(--surface-2)); }
+.notif__icon { font-size: 1.1rem; line-height: 1.2; }
+.notif__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.notif__title { font-weight: 600; font-size: .88rem; }
+.notif__msg { font-size: .82rem; color: var(--text-muted); }
+.notif__time { font-size: .72rem; color: var(--text-muted); }
+.notif__dismiss {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.notif__dismiss:hover { color: var(--color-danger); }
+
+/* Plan history timeline */
+.history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.history-item { display: flex; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--border); }
+.history-item:last-child { border-bottom: none; }
+.history-item__icon { font-size: 1.1rem; line-height: 1.3; }
+.history-item__summary { font-size: .9rem; color: var(--text); }
+.history-item__meta { font-size: .75rem; color: var(--text-muted); margin-top: 2px; }
+
+/* Generic data table (trash) */
+.table-wrap { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.data-table th,
+.data-table td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); }
+.data-table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); }
+.data-table__actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+/* ── Plan templates ───────────────────────────────────────────────────────── */
+.template-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.template-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.template-item__name { font-weight: 600; color: var(--text); }
+.template-item__meta { font-size: .78rem; color: var(--text-muted); }
+.template-item__desc { font-size: .82rem; color: var(--text-muted); margin-top: 2px; }
+.template-item__actions { display: flex; gap: 6px; flex-shrink: 0; }
