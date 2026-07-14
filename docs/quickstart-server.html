@@ -56,14 +56,68 @@ Proxy und <strong>HTTPS</strong> via Let's Encrypt – alles unter
 <p>Weil der Produktions-Build der App <strong>Same-Origin</strong>
 spricht (siehe <code>src/lib/pocketbase.ts</code> → Basis-URL
 <code>undefined</code>), genügt es, dass nginx SPA und API unter
-derselben Domain ausliefert – <strong>kein CORS, keine
+derselben Adresse ausliefert – <strong>kein CORS, keine
 <code>VITE_PB_URL</code> nötig</strong>.</p>
+<h3 id="zwei-varianten--welche-passt-zu-dir">Zwei Varianten – welche
+passt zu dir?</h3>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Variante A – Öffentlich</strong></th>
+<th><strong>Variante B – Lokal / firmenintern</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Zugriff aus dem Internet</td>
+<td>ja</td>
+<td>nein (nur im LAN/VPN)</td>
+</tr>
+<tr class="even">
+<td>Öffentliche Domain nötig</td>
+<td><strong>ja</strong> (z. B. <code>essen.example.de</code>)</td>
+<td><strong>nein</strong> – IP, interner DNS- oder
+<code>.local</code>-Name genügt</td>
+</tr>
+<tr class="odd">
+<td>HTTPS-Zertifikat</td>
+<td>Let's Encrypt (automatisch, kostenlos)</td>
+<td>mkcert / selbstsigniert – oder HTTP im vertrauenswürdigen LAN</td>
+</tr>
+<tr class="even">
+<td>Passt für</td>
+<td>Zugriff von unterwegs, mehrere Standorte</td>
+<td>Kantine/Firma im eigenen Netz, keine (reservierte) Domain</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Die Schritte <a
+href="#1-grundabsicherung-des-servers">1</a>–<a
+href="#8-ersten-admin--superuser-anlegen">8</a> und <a
+href="#12-backups-einrichten">12</a>–<a href="#15-checkliste">15</a>
+sind für beide Varianten identisch.</strong> Nur bei
+<strong>Adressierung, Reverse Proxy und Zertifikat</strong> (Schritte
+9–11) unterscheiden sie sich:</p>
+<ul>
+<li><strong>Variante A:</strong> Schritte <a
+href="#9-nginx-als-reverse-proxy">9</a>–<a
+href="#11-firewall-finalisieren">11</a> (Domain + Let's Encrypt).</li>
+<li><strong>Variante B:</strong> <a
+href="#variante-b-lokales-oder-firmeninternes-netz-ohne-domain">Variante
+B: Lokales oder firmeninternes Netz (ohne Domain)</a> – als Ersatz für
+9–11.</li>
+</ul>
 <blockquote>
 <p><strong>Zeitbedarf:</strong> ca. 30–45 Minuten.
-<strong>Voraussetzungen:</strong> ein Server mit öffentlicher IP, eine
-<strong>Domain</strong> (hier Beispiel <code>essen.example.de</code>),
-deren DNS-<strong>A/AAAA-Record</strong> auf die Server-IP zeigt, und
-SSH-Zugang als Benutzer mit <code>sudo</code>.</p>
+<strong>Voraussetzungen:</strong> – <strong>Variante A:</strong> ein
+Server mit <strong>öffentlicher IP</strong>, eine
+<strong>Domain</strong> (Beispiel <code>essen.example.de</code>) mit
+<strong>A/AAAA-Record</strong> auf die Server-IP. – <strong>Variante
+B:</strong> nur ein Server im <strong>lokalen Netz</strong> mit
+<strong>fester interner IP</strong> (Beispiel <code>192.168.1.50</code>)
+– keine Domain, kein öffentliches DNS nötig. Für beide: SSH-Zugang als
+Benutzer mit <code>sudo</code>.</p>
 </blockquote>
 <hr />
 <h2 id="inhaltsverzeichnis">Inhaltsverzeichnis</h2>
@@ -83,11 +137,19 @@ installieren &amp; Schema einspielen</a></li>
 systemd-Dienst</a></li>
 <li><a href="#8-ersten-admin--superuser-anlegen">Ersten Admin &amp;
 Superuser anlegen</a></li>
-<li><a href="#9-nginx-als-reverse-proxy">nginx als Reverse
-Proxy</a></li>
-<li><a href="#10-https-mit-lets-encrypt">HTTPS mit Let's
-Encrypt</a></li>
-<li><a href="#11-firewall-finalisieren">Firewall finalisieren</a></li>
+<li><a href="#9-nginx-als-reverse-proxy">nginx als Reverse Proxy</a> ·
+<em>Variante A</em></li>
+<li><a href="#10-https-mit-lets-encrypt">HTTPS mit Let's Encrypt</a> ·
+<em>Variante A</em></li>
+<li><a href="#11-firewall-finalisieren">Firewall finalisieren</a> ·
+<em>Variante A</em></li>
+</ol>
+<ul>
+<li>⮑ <em>Alternative:</em> <a
+href="#variante-b-lokales-oder-firmeninternes-netz-ohne-domain">Variante
+B – Lokales oder firmeninternes Netz (ohne Domain)</a></li>
+</ul>
+<ol start="12" type="1">
 <li><a href="#12-backups-einrichten">Backups einrichten</a></li>
 <li><a href="#13-updates--wartung">Updates &amp; Wartung</a></li>
 <li><a href="#14-fehlersuche">Fehlersuche</a></li>
@@ -288,6 +350,14 @@ Datenbank/Admin-UI, letzterer ist die höchste Rolle
 </blockquote>
 <hr />
 <h2 id="9-nginx-als-reverse-proxy">9. nginx als Reverse Proxy</h2>
+<blockquote>
+<p><strong>Variante A (öffentlich, mit Domain).</strong> Die Schritte
+9–11 beschreiben das Setup mit öffentlicher Domain und Let's Encrypt.
+Für ein <strong>lokales/internes Netz ohne Domain</strong> überspringe
+9–11 und nutze stattdessen <a
+href="#variante-b-lokales-oder-firmeninternes-netz-ohne-domain">Variante
+B</a>.</p>
+</blockquote>
 <p>Site-Konfiguration anlegen (Domain anpassen):</p>
 <pre class="bash"><code>sudo tee /etc/nginx/sites-available/essensplaner &gt;/dev/null &lt;&lt;&#39;EOF&#39;
 server {
@@ -355,6 +425,270 @@ sudo ufw status verbose</code></pre>
 <p>Port <strong>8090</strong> bleibt bewusst
 <strong>geschlossen</strong> – PocketBase ist nur lokal über nginx
 erreichbar.</p>
+<hr />
+<h2
+id="variante-b-lokales-oder-firmeninternes-netz-ohne-domain">Variante B:
+Lokales oder firmeninternes Netz (ohne Domain)</h2>
+<p>Läuft der Server in einem <strong>LAN oder Firmennetz</strong> und
+gibt es <strong>keine (reservierte) öffentliche Domain</strong>,
+brauchst du weder öffentliches DNS noch Let's Encrypt. Dieser Abschnitt
+<strong>ersetzt die Schritte 9–11</strong> der Variante A. <strong>Alle
+übrigen Schritte (<a href="#1-grundabsicherung-des-servers">1</a>–<a
+href="#8-ersten-admin--superuser-anlegen">8</a> und <a
+href="#12-backups-einrichten">12</a>–<a href="#15-checkliste">15</a>)
+bleiben identisch.</strong></p>
+<p>Zielarchitektur (alles im internen Netz):</p>
+<pre><code>     Clients im LAN  (192.168.1.0/24)
+            │  http(s)://192.168.1.50  bzw.  essensplaner.local
+     ┌──────▼─────────────────────── nginx ───────────────────────┐
+     │  /            → statische SPA aus /var/www/essensplaner/dist │
+     │  /api/  /_/   → Reverse Proxy auf 127.0.0.1:8090            │
+     └──────────────────────────────┬──────────────────────────────┘
+                             ┌───────▼────────┐
+                             │  PocketBase    │  127.0.0.1:8090
+                             └────────────────┘</code></pre>
+<h3 id="b1-adressierung--wie-erreichen-die-clients-den-server">B.1
+Adressierung – wie erreichen die Clients den Server?</h3>
+<p>Zuerst braucht der Server eine <strong>feste interne IP</strong>
+(sonst ändert sie sich per DHCP). Am einfachsten im Router eine
+<strong>DHCP-Reservierung</strong> für die MAC-Adresse des Servers
+anlegen. Alternativ statisch per netplan:</p>
+<pre class="bash"><code># MAC/Interface ermitteln
+ip a
+sudo tee /etc/netplan/60-static.yaml &gt;/dev/null &lt;&lt;&#39;EOF&#39;
+network:
+  version: 2
+  ethernets:
+    eth0:                      # ← Interface-Name aus `ip a`
+      dhcp4: false
+      addresses: [192.168.1.50/24]
+      routes:
+        - to: default
+          via: 192.168.1.1     # ← Gateway/Router
+      nameservers:
+        addresses: [192.168.1.1, 9.9.9.9]
+EOF
+sudo chmod 600 /etc/netplan/60-static.yaml
+sudo netplan apply</code></pre>
+<p>Dann <strong>einen</strong> der folgenden Wege wählen, wie Clients
+den Server ansprechen:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Weg</th>
+<th>Aufwand</th>
+<th>Client-Adresse</th>
+<th>Wann geeignet</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Nur IP</strong></td>
+<td>keiner</td>
+<td><code>http://192.168.1.50/</code></td>
+<td>schnell, wenige Nutzer</td>
+</tr>
+<tr class="even">
+<td><strong><code>.local</code>-Name (mDNS)</strong></td>
+<td>Avahi auf dem Server</td>
+<td><code>http://essensplaner.local/</code></td>
+<td>ohne DNS-Server, hübscher Name</td>
+</tr>
+<tr class="odd">
+<td><strong>Interner DNS-Eintrag</strong></td>
+<td>A-Record im Firmen-DNS/Router</td>
+<td><code>http://essensplaner.firma.local/</code></td>
+<td>vorhandene DNS-Infrastruktur</td>
+</tr>
+<tr class="even">
+<td><strong>hosts-Datei je Client</strong></td>
+<td>Eintrag pro Rechner</td>
+<td><code>http://essensplaner/</code></td>
+<td>sehr wenige, feste Clients</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>.local</code>-Name per Avahi (Zeroconf, empfohlen ohne
+DNS-Server):</strong></p>
+<pre class="bash"><code>sudo apt install -y avahi-daemon
+sudo hostnamectl set-hostname essensplaner
+sudo systemctl enable --now avahi-daemon
+# Clients (Windows 10+/macOS/Linux) erreichen den Server nun als
+# essensplaner.local – ohne weitere Konfiguration.</code></pre>
+<p><strong>hosts-Datei (falls kein DNS/mDNS):</strong> auf jedem Client
+eintragen – Linux/macOS <code>/etc/hosts</code>, Windows
+<code>C:\Windows\System32\drivers\etc\hosts</code>:</p>
+<pre><code>192.168.1.50   essensplaner</code></pre>
+<h3 id="b2-nginx-für-den-internen-zugriff">B.2 nginx für den internen
+Zugriff</h3>
+<p>Wie in Variante A, nur der <code>server_name</code> zeigt auf den
+<strong>internen Namen/die IP</strong> (<code>_</code> akzeptiert jeden
+Host-Header – praktisch, wenn per IP <strong>und</strong> Name
+zugegriffen wird):</p>
+<pre class="bash"><code>sudo tee /etc/nginx/sites-available/essensplaner &gt;/dev/null &lt;&lt;&#39;EOF&#39;
+server {
+    listen 80;
+    listen [::]:80;
+    server_name essensplaner.local 192.168.1.50 _;   # Name, IP, oder beliebig
+
+    root /var/www/essensplaner/dist;
+    index index.html;
+    client_max_body_size 10M;
+
+    location ~ ^/(api|_)/ {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        &quot;upgrade&quot;;
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+    }
+
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control &quot;public, immutable&quot;;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+EOF
+
+sudo ln -sf /etc/nginx/sites-available/essensplaner /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t &amp;&amp; sudo systemctl reload nginx</code></pre>
+<p>Test: <code>http://192.168.1.50/</code> zeigt die App,
+<code>http://192.168.1.50/api/health</code> liefert JSON.</p>
+<blockquote>
+<p><strong>Noch minimaler – ganz ohne nginx:</strong> PocketBase kann
+die SPA selbst ausliefern. Lege den Build nach <code>pb_public/</code>,
+binde PocketBase ans LAN und spare den Reverse Proxy:</p>
+<pre class="bash"><code>sudo cp -r /opt/essen-seite/dist/* /opt/pocketbase/pb_public/
+sudo chown -R pocketbase:pocketbase /opt/pocketbase/pb_public
+# in der systemd-Unit ExecStart auf --http=0.0.0.0:8090 ändern, dann:
+sudo systemctl daemon-reload &amp;&amp; sudo systemctl restart pocketbase</code></pre>
+<p>Clients nutzen dann <code>http://192.168.1.50:8090/</code> (SPA
+<strong>und</strong> API sind same-origin – funktioniert ohne Weiteres).
+Nachteil: nur HTTP, und Port 8090 muss im LAN offen sein (siehe
+B.4).</p>
+</blockquote>
+<h3 id="b3-https-im-internen-netz--drei-optionen">B.3 HTTPS im internen
+Netz – drei Optionen</h3>
+<blockquote>
+<p><strong>Warum überhaupt HTTPS im LAN?</strong> Über
+<strong>HTTP</strong> wird das Login-Passwort im Klartext durchs Netz
+geschickt, und <strong>Desktop-Benachrichtigungen</strong> der App
+funktionieren nur in einem <em>secure context</em> (HTTPS oder
+<code>localhost</code>) – über eine IP/einen Namen per HTTP also
+<strong>nicht</strong>. Im vertrauenswürdigen LAN ist reines HTTP oft
+vertretbar; für Passwort-Login und Benachrichtigungen ist HTTPS aber
+klar besser.</p>
+</blockquote>
+<p><strong>Option 1 – Nur HTTP (einfachster Weg).</strong> Nichts weiter
+tun; die App läuft über <code>http://…</code>. Die obigen
+Einschränkungen beachten.</p>
+<p><strong>Option 2 – <code>mkcert</code> (lokal vertrauenswürdig,
+empfohlen).</strong> Erzeugt eine eigene Mini-CA; deren Root-Zertifikat
+einmalig auf den Clients installieren → <strong>grünes Schloss ohne
+Warnung</strong> im ganzen Netz:</p>
+<pre class="bash"><code>sudo apt install -y libnss3-tools
+# mkcert-Binary holen (GitHub-Release)
+curl -fsSL -o mkcert &quot;https://dl.filippo.io/mkcert/latest?for=linux/amd64&quot;
+chmod +x mkcert &amp;&amp; sudo mv mkcert /usr/local/bin/
+
+mkcert -install                                   # legt die lokale Root-CA an
+sudo mkdir -p /etc/nginx/certs
+sudo mkcert -cert-file /etc/nginx/certs/essensplaner.pem \
+            -key-file  /etc/nginx/certs/essensplaner-key.pem \
+            essensplaner.local 192.168.1.50       # Name(n)/IP(s) eintragen
+# Root-CA für die Client-Verteilung finden:
+mkcert -CAROOT     # → diese rootCA.pem auf jeden Client importieren (s. u.)</code></pre>
+<p><strong>Option 3 – Selbstsigniert (schnell, aber
+Browser-Warnung).</strong> Ohne Zusatztool; Clients zeigen bis zum
+Import des Zertifikats eine Warnung:</p>
+<pre class="bash"><code>sudo mkdir -p /etc/nginx/certs
+sudo openssl req -x509 -nodes -days 825 -newkey rsa:2048 \
+  -keyout /etc/nginx/certs/essensplaner-key.pem \
+  -out    /etc/nginx/certs/essensplaner.pem \
+  -subj &quot;/CN=essensplaner.local&quot; \
+  -addext &quot;subjectAltName=DNS:essensplaner.local,IP:192.168.1.50&quot;</code></pre>
+<p><strong>nginx auf HTTPS umstellen</strong> (für Option 2
+<strong>oder</strong> 3 identisch) – den <code>server</code>-Block aus
+B.2 so anpassen bzw. ergänzen:</p>
+<pre class="nginx"><code>server {
+    listen 80;
+    listen [::]:80;
+    server_name essensplaner.local 192.168.1.50 _;
+    return 301 https://$host$request_uri;        # HTTP → HTTPS
+}
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name essensplaner.local 192.168.1.50 _;
+
+    ssl_certificate     /etc/nginx/certs/essensplaner.pem;
+    ssl_certificate_key /etc/nginx/certs/essensplaner-key.pem;
+
+    root /var/www/essensplaner/dist;
+    index index.html;
+    client_max_body_size 10M;
+
+    location ~ ^/(api|_)/ { proxy_pass http://127.0.0.1:8090; proxy_http_version 1.1;
+        proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection &quot;upgrade&quot;;
+        proxy_buffering off; proxy_read_timeout 3600s; }
+    location /assets/ { expires 1y; add_header Cache-Control &quot;public, immutable&quot;; }
+    location / { try_files $uri $uri/ /index.html; }
+}</code></pre>
+<pre class="bash"><code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx</code></pre>
+<p><strong>Root-CA / Zertifikat auf den Clients vertrauen</strong> (nur
+Option 2 &amp; 3): <code>rootCA.pem</code> (mkcert) bzw.
+<code>essensplaner.pem</code> (selbstsigniert) verteilen –</p>
+<ul>
+<li><strong>Windows:</strong> Doppelklick → „Zertifikat installieren" →
+<em>Lokaler Computer</em> → <em>Vertrauenswürdige
+Stammzertifizierungsstellen</em> (per GPO netzweit verteilbar).</li>
+<li><strong>macOS:</strong> in die <em>Schlüsselbundverwaltung</em>
+importieren, auf „Immer vertrauen" setzen.</li>
+<li><strong>Linux:</strong> nach
+<code>/usr/local/share/ca-certificates/</code> kopieren, dann
+<code>sudo update-ca-certificates</code>.</li>
+</ul>
+<blockquote>
+<p><strong>Real-Domain nur intern auflösbar?</strong> Wer eine
+<strong>echte</strong> registrierte Domain besitzt, sie aber nur intern
+nutzt (Split-Horizon-DNS), kann trotzdem ein echtes
+Let's-Encrypt-Zertifikat über die <strong>DNS-01-Challenge</strong>
+beziehen (<code>certbot</code> mit DNS-Plugin) – dann entfällt das
+Verteilen einer eigenen CA.</p>
+</blockquote>
+<h3 id="b4-firewall-im-lan">B.4 Firewall im LAN</h3>
+<pre class="bash"><code># Web-Ports nur aus dem internen Netz zulassen (Subnetz anpassen):
+sudo ufw allow from 192.168.1.0/24 to any port 80 proto tcp
+sudo ufw allow from 192.168.1.0/24 to any port 443 proto tcp
+# Minimal-Variante ohne nginx (B.2-Kasten): stattdessen 8090 freigeben
+# sudo ufw allow from 192.168.1.0/24 to any port 8090 proto tcp
+sudo ufw enable
+sudo ufw status verbose</code></pre>
+<p>Hat der Server <strong>auch</strong> eine öffentliche Schnittstelle,
+sorgt das <code>from &lt;Subnetz&gt;</code> dafür, dass die App
+<strong>nicht</strong> aus dem Internet erreichbar ist. Reiner
+LAN-Server ohne öffentliche IP: <code>sudo ufw allow 80,443/tcp</code>
+genügt.</p>
+<h3 id="b5-zugriff--superuser">B.5 Zugriff &amp; Superuser</h3>
+<p>Der App-Superuser wird genauso angelegt wie in <a
+href="#8-ersten-admin--superuser-anlegen">Schritt 8</a>, nur über die
+<strong>interne Adresse</strong>, z. B.
+<code>https://essensplaner.local/_/</code> bzw.
+<code>http://192.168.1.50/_/</code>. Danach ist die App unter der
+internen Adresse für alle Geräte im Netz erreichbar.</p>
 <hr />
 <h2 id="12-backups-einrichten">12. Backups einrichten</h2>
 <p>Alle Nutzdaten liegen in
@@ -456,12 +790,27 @@ E-Mail/Passwort? App-Superuser angelegt?</td>
 <code>root</code> korrekt?</td>
 </tr>
 <tr class="odd">
-<td>Zertifikat erneuert nicht</td>
+<td>Zertifikat erneuert nicht (Variante A)</td>
 <td><code>sudo certbot renew --dry-run</code>, nginx-Reload</td>
 </tr>
 <tr class="even">
 <td>nginx-Konfig fehlerhaft</td>
 <td><code>sudo nginx -t</code></td>
+</tr>
+<tr class="odd">
+<td><code>essensplaner.local</code> nicht erreichbar (Variante B)</td>
+<td>Avahi läuft? <code>systemctl status avahi-daemon</code>; Client
+unterstützt mDNS? Alternativ per IP testen</td>
+</tr>
+<tr class="even">
+<td>Zertifikat-Warnung im Browser (Variante B)</td>
+<td>Root-CA (mkcert) bzw. selbstsigniertes Zertifikat auf dem Client
+importieren (siehe B.3)</td>
+</tr>
+<tr class="odd">
+<td>Desktop-Benachrichtigungen gehen nicht (Variante B)</td>
+<td>Nur im <em>secure context</em> – HTTPS aktivieren (B.3), über reines
+HTTP funktionieren sie nur auf <code>localhost</code></td>
 </tr>
 </tbody>
 </table>
@@ -487,10 +836,13 @@ Web-Wurzel kopiert</label></li>
 App-Superuser angelegt</label></li>
 <li><label><input type="checkbox" />nginx als Reverse Proxy konfiguriert
 (<code>nginx -t</code> grün)</label></li>
-<li><label><input type="checkbox" />HTTPS via certbot aktiv,
-Auto-Renewal getestet</label></li>
-<li><label><input type="checkbox" />ufw aktiv (nur 22/80/443 offen, 8090
-zu)</label></li>
+<li><label><input type="checkbox" /><strong>Variante A:</strong> Domain
+zeigt auf Server, HTTPS via certbot aktiv, Auto-Renewal getestet, ufw
+(22/80/443)</label></li>
+<li><label><input type="checkbox" /><strong>Variante B:</strong> interne
+Adresse (IP oder <code>.local</code>) erreichbar, HTTPS via
+mkcert/selbstsigniert (oder bewusst HTTP), ufw auf LAN-Subnetz
+beschränkt</label></li>
 <li><label><input type="checkbox" />Backups per Cron eingerichtet und
 einmal getestet</label></li>
 <li><label><input type="checkbox" />Erste Gruppe + Nutzer angelegt,

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# build-docs.sh — erzeugt aus den Markdown-Dateien in doc/ (+ migrations/README.md)
-# eine hübsche, self-contained Dokumentations-Website unter public/docs/.
+# build-docs.sh — erzeugt aus den Markdown-Dateien in docs/Markdown/
+# (+ migrations/README.md) eine hübsche, self-contained Dokumentations-Website
+# direkt unter docs/ (docs/*.html + docs/assets/).
 #
-# Vite kopiert public/ nach dist/, daher wird die Seite vom bestehenden
-# GitHub-Pages-Workflow automatisch unter /docs/ mit veröffentlicht.
+# Für GitHub Pages: Settings → Pages → "Deploy from a branch" → main / "/docs".
+# Die Markdown-Quellen unter docs/Markdown/ bleiben beim Build unangetastet.
 #
 # Voraussetzung: pandoc (lokal). Die generierten HTML-Dateien werden committet;
 # CI braucht kein pandoc.
@@ -14,15 +15,18 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DOCDIR="$ROOT/doc"
-OUT="$ROOT/public/docs"
+DOCDIR="$ROOT/docs/Markdown"
+OUT="$ROOT/docs"
 FONTS_SRC="$ROOT/src/assets/fonts"
 REPO_URL="https://github.com/NachtsternBuild/essen-seite"
 REPO_BLOB="$REPO_URL/blob/main"
 
 command -v pandoc >/dev/null 2>&1 || { echo "FEHLER: pandoc nicht gefunden."; exit 1; }
 
-rm -rf "$OUT"
+# Nur die generierten Artefakte entfernen – die Markdown-Quellen unter
+# $OUT/Markdown (und andere Nicht-Artefakte) bleiben unangetastet.
+rm -rf "$OUT/assets"
+rm -f "$OUT"/*.html
 mkdir -p "$OUT/assets/fonts"
 
 # ── Fonts (Marken-Match zur App) ────────────────────────────────────────────────
@@ -360,10 +364,10 @@ cat > "$OUT/assets/app.js" <<'JS'
 })();
 JS
 
-echo "Erzeuge Dokumentations-Website in public/docs/ …"
+echo "Erzeuge Dokumentations-Website in docs/ …"
 build_index
 build_doc "benutzerhandbuch.html"          "$DOCDIR/BENUTZERHANDBUCH.md"        "Benutzerhandbuch"       "benutzerhandbuch.html"
 build_doc "handbuch-admin-entwickler.html" "$DOCDIR/HANDBUCH_ADMIN_ENTWICKLER.md" "Admin & Entwickler"   "handbuch-admin-entwickler.html"
 build_doc "quickstart-server.html"         "$DOCDIR/QUICKSTART_SERVER.md"       "Server-Quickstart"      "quickstart-server.html"
 build_doc "migrations-readme.html"         "$ROOT/migrations/README.md"         "DB-Schema-Referenz"     "migrations-readme.html"
-echo "Fertig. Öffnen: public/docs/index.html"
+echo "Fertig. Öffnen: docs/index.html"
