@@ -98,26 +98,4 @@ export const orderService = {
     const list = await orders.getFullList({ filter: `meal_plan = "${planId}"` });
     await Promise.all(list.map(o => orders.delete(o.id)));
   },
-
-  // Convert Orders to legacy WeekData format for backward compat
-  ordersToLegacy(
-    ordersByUser: OrdersByUser
-  ): Record<string, Record<string, { number: string; name: string; price: number; edited: boolean }>> {
-    const result: Record<
-      string,
-      Record<string, { number: string; name: string; price: number; edited: boolean }>
-    > = {};
-    Object.entries(ordersByUser).forEach(([userName, days]) => {
-      result[userName] = {};
-      Object.entries(days).forEach(([day, order]) => {
-        result[userName][day] = {
-          number: order.meal_number,
-          name: order.meal_name,
-          price: order.meal_price,
-          edited: order.edited,
-        };
-      });
-    });
-    return result;
-  },
 };

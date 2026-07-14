@@ -1,7 +1,7 @@
 import type { TrashEntry } from '../types';
 
 /** Human-friendly labels for the source collection of a trashed record. */
-export const TRASH_COLLECTION_LABEL: Record<string, string> = {
+const TRASH_COLLECTION_LABEL: Record<string, string> = {
   meal_plans: 'Essensplan',
   groups: 'Gruppe',
   orders: 'Bestellung',

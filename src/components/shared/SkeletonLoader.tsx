@@ -1,4 +1,4 @@
-export function SkeletonCard() {
+function SkeletonCard() {
   return (
     <div className="skeleton-card" aria-hidden="true">
       <div className="skeleton-line skeleton-line--short" />

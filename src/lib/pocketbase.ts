@@ -26,14 +26,7 @@ export const COLLECTIONS = {
   PLAN_HISTORY: 'plan_history',
   /** User/group notifications (deadline, new week, plan changed, …). */
   NOTIFICATIONS: 'notifications',
-  /** Legacy – single-document storage, kept for migration */
-  MEALS_DATA: 'meals_data',
 } as const;
-
-/** @deprecated use COLLECTIONS instead */
-export const COLLECTION_NAME = COLLECTIONS.MEALS_DATA;
-/** @deprecated use COLLECTIONS.USERS instead */
-export const USER_COLLECTION = COLLECTIONS.USERS;
 
 export const DAYS_OF_WEEK = [
   'Montag',

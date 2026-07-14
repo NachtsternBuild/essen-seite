@@ -312,25 +312,9 @@ export interface WeekData {
   orders: Orders;
 }
 
-export interface AppData {
-  upcoming: WeekData;
-  current: WeekData;
-  previous: WeekData | null;
-  maintenance_active?: boolean;
-  maintenance_start?: string;
-  maintenance_duration?: string;
-}
-
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 export type ExportFormat = 'txt' | 'csv' | 'pdf' | 'json';
-
-export interface ExportOptions {
-  format: ExportFormat;
-  label: string;
-  weekData: WeekData;
-  groupName?: string;
-}
 
 // ─── Audit Log ─────────────────────────────────────────────────────────────────
 
@@ -448,14 +432,6 @@ export interface MealStat {
   name: string;
   count: number;
   revenue: number;
-}
-
-export interface WeekStats {
-  totalOrders: number;
-  totalRevenue: number;
-  popularMeals: MealStat[];
-  ordersByDay: Record<string, number>;
-  averagePerPerson: number;
 }
 
 // ─── Statistics suite (Phase 2) ────────────────────────────────────────────────

@@ -60,20 +60,6 @@ a:hover {
   to { transform: rotate(360deg); }
 }
 
-.page-spinner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 60px 20px;
-  color: var(--text-muted);
-}
-
-.page-spinner__label {
-  font-size: 1rem;
-  color: var(--text-muted);
-}
-
 /* ─── Skeleton loader ────────────────────────────────────────────────────────── */
 .skeleton-card {
   background: var(--surface);

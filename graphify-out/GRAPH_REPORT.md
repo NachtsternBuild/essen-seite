@@ -1,16 +1,16 @@
 # Graph Report - essen-seite  (2026-07-14)
 
 ## Corpus Check
-- 119 files · ~81,659 words
+- 123 files · ~95,792 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 861 nodes · 1545 edges · 90 communities (43 shown, 47 thin omitted)
+- 927 nodes · 1607 edges · 100 communities (53 shown, 47 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 25 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `630d7b8f`
+- Built from commit: `a658251b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -100,6 +100,15 @@
 - Community 86
 - Community 87
 - devDependencies
+- 5. Vollständiges Schema – Collections & Felder
+- WeekView.tsx
+- AuthUser
+- Statistics.tsx
+- utils.ts
+- PlanHistoryModal.tsx
+- OrderSummary.tsx
+- build-docs.sh
+- TemplateModal.tsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `AuthUser` - 46 edges
@@ -107,11 +116,11 @@
 3. `Group` - 21 edges
 4. `compilerOptions` - 20 edges
 5. `compilerOptions` - 18 edges
-6. `BaseRepository` - 14 edges
-7. `5. Vollständiges Datenbankschema (Referenz)` - 14 edges
-8. `App()` - 13 edges
-9. `Spinner()` - 13 edges
-10. `OrdersByUser` - 13 edges
+6. `Essensplaner – Quickstart: Produktiv-Setup auf Ubuntu Server 26.04 LTS` - 17 edges
+7. `BaseRepository` - 14 edges
+8. `5. Vollständiges Datenbankschema (Referenz)` - 14 edges
+9. `App()` - 13 edges
+10. `Spinner()` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Order Form UI (Admin View with Wochenplanung beenden)` --references--> `orders Collection (PocketBase)`  [INFERRED]
@@ -128,35 +137,35 @@
 ## Import Cycles
 - None detected.
 
-## Communities (90 total, 47 thin omitted)
+## Communities (100 total, 47 thin omitted)
 
 ### Community 0 - "Group Management UI"
-Cohesion: 0.14
-Nodes (22): FormMode, GROUP_COLORS, GroupForm(), GROUP_COLORS, SystemSettingsForm(), SystemSettingsFormProps, THEME_OPTIONS, CURRENCY_OPTIONS (+14 more)
+Cohesion: 0.18
+Nodes (17): FormMode, GROUP_COLORS, GroupFormProps, GROUP_COLORS, SystemSettingsForm(), SystemSettingsFormProps, THEME_OPTIONS, CustomSelect() (+9 more)
 
 ### Community 1 - "Package Dependencies"
 Cohesion: 0.07
-Nodes (29): crypto-js, js-sha256, jspdf, jspdf-autotable, dependencies, crypto-js, js-sha256, jspdf (+21 more)
+Nodes (26): jspdf, jspdf-autotable, dependencies, jspdf, jspdf-autotable, pocketbase, react, react-dom (+18 more)
 
 ### Community 2 - "Hooks & PocketBase Core"
 Cohesion: 0.02
 Nodes (84): v0.23.1, v0.23.10, v0.23.11, v0.23.12, v0.23.2, v0.23.3, v0.23.4, v0.23.5 (+76 more)
 
 ### Community 3 - "Order Summary & Utils"
-Cohesion: 0.09
-Nodes (18): ACTION_ICON, formatTime(), PlanHistoryModal(), PlanHistoryModalProps, usePlanHistory(), COLLECTIONS, DayOfWeek, pb (+10 more)
+Cohesion: 0.08
+Nodes (23): formatTime(), NotificationBell(), TYPE_ICON, NotificationsPanel(), maybeShowDesktop(), useNotifications(), COLLECTIONS, DayOfWeek (+15 more)
 
 ### Community 5 - "App Shell & Navigation"
-Cohesion: 0.12
-Nodes (20): ACTION_LABEL, AuditLogPanel(), formatTime(), EmptyState(), EmptyStateProps, formatTime(), TrashPanel(), useAuditLog() (+12 more)
+Cohesion: 0.13
+Nodes (19): ACTION_LABEL, AuditLogPanel(), formatTime(), formatTime(), TrashPanel(), useAuditLog(), useTrash(), describeTrashEntry() (+11 more)
 
 ### Community 6 - "Meal Form & Cards"
-Cohesion: 0.11
-Nodes (22): Dashboard(), DashboardProps, focusWeek(), greeting(), GroupSummary(), HeroCard(), planHasMeals(), todayPlanDay() (+14 more)
+Cohesion: 0.14
+Nodes (16): Dashboard(), DashboardProps, focusWeek(), greeting(), GroupSummary(), HeroCard(), planHasMeals(), todayPlanDay() (+8 more)
 
 ### Community 7 - "Theme & Auth Context"
-Cohesion: 0.21
-Nodes (12): OrderFormProps, CustomSelect(), CustomSelectProps, DropdownPos, SelectOption, EMPTY_FORM, UserManagement, UserManagementProps (+4 more)
+Cohesion: 0.18
+Nodes (12): InputModal(), InputModalProps, Modal(), ModalProps, EMPTY_FORM, UserManagement, UserManagementProps, UserRow() (+4 more)
 
 ### Community 8 - "TypeScript App Config"
 Cohesion: 0.07
@@ -183,8 +192,8 @@ Cohesion: 0.53
 Nodes (5): ensureCollection(), ensureField(), ensureTimestamps(), findCollection(), NOTE: `groups` is created before `group_memberships`, so its rules must
 
 ### Community 25 - "Community 25"
-Cohesion: 0.11
-Nodes (25): AuthContext, AuthContextValue, AuthProvider(), useAuthContext(), GroupProvider(), PermissionContext, PermissionContextValue, PermissionProvider() (+17 more)
+Cohesion: 0.14
+Nodes (20): AuthProvider(), useAuthContext(), GroupProvider(), PermissionContext, PermissionContextValue, PermissionProvider(), ALL_PERMISSIONS, GROUP_ADMIN_PERMISSIONS (+12 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.05
@@ -227,8 +236,8 @@ Cohesion: 0.67
 Nodes (3): GitHub Pages CI/CD Deployment, App Entry Point (index.html), React/TypeScript/Vite Frontend
 
 ### Community 66 - "Community 66"
-Cohesion: 0.05
-Nodes (66): AddMealForm(), AddMealFormProps, MealCard, MealCardProps, OrderForm(), OrderSummary, OrderSummaryProps, TemplateModal() (+58 more)
+Cohesion: 0.14
+Nodes (19): OrderSummaryProps, buildMealIndex(), orderService, dayMeals, plan, AllergenStat, DAYS_OF_WEEK, DietStat (+11 more)
 
 ### Community 76 - "Community 76"
 Cohesion: 0.19
@@ -243,31 +252,31 @@ Cohesion: 0.13
 Nodes (14): Architecture: the new layering, Audit log (brief §13), Collections added, Fields added to existing collections, Flexible permission system (brief §2), Global app settings (`settings` collection, key `app_defaults`), How to apply the migration, New / changed source files (+6 more)
 
 ### Community 79 - "Community 79"
-Cohesion: 0.09
-Nodes (31): formatTime(), NotificationBell(), TYPE_ICON, AppearancePanel(), GroupDefaultsPanel(), NotificationsPanel(), Settings(), SystemPanel() (+23 more)
+Cohesion: 0.05
+Nodes (41): 1. Was ist der Essensplaner?, 2. Anmelden & Abmelden, 3. Der Aufbau der Oberfläche, 4. Die Menüs im Detail, 5. Essen bestellen – Schritt für Schritt, 6. Der Bestellschluss (08:30-Regel), 7. Rollen & Rechte, 8. Häufige Fragen (FAQ) (+33 more)
 
 ### Community 80 - "Community 80"
 Cohesion: 0.25
 Nodes (7): Files, How statistics are computed, New data surface, Phase 2 – Dashboards & Statistics, Statistics suite (§14), Three role dashboards (§8), Verification
 
 ### Community 81 - "Community 81"
-Cohesion: 0.16
-Nodes (14): AppSettingsInput, createUserSchema, groupSchema, GroupSettingsInput, groupSettingsSchema, LoginInput, loginSchema, MaintenanceInput (+6 more)
+Cohesion: 0.15
+Nodes (15): AppSettingsInput, appSettingsSchema, createUserSchema, groupSchema, GroupSettingsInput, groupSettingsSchema, LoginInput, loginSchema (+7 more)
 
 ### Community 82 - "Community 82"
-Cohesion: 0.15
-Nodes (21): App(), GroupManagement(), MaintenancePanel(), MaintenancePanelProps, ICONS, ToastContainer(), ToastContext, ToastContextValue (+13 more)
+Cohesion: 0.08
+Nodes (41): App(), GroupManagement(), MaintenancePanel(), MaintenancePanelProps, AppearancePanel(), GroupDefaultsPanel(), Settings(), SystemPanel() (+33 more)
 
 ### Community 83 - "Community 83"
-Cohesion: 0.24
-Nodes (14): GroupFormProps, GroupSelector(), GroupSelectorProps, UserRowProps, GroupContext, GroupContextValue, useGroupContext(), GroupInput (+6 more)
+Cohesion: 0.26
+Nodes (11): GroupCardProps, GroupContext, GroupContextValue, GroupInput, groupService, settingsService, Group, GroupExport (+3 more)
 
 ### Community 84 - "Community 84"
-Cohesion: 0.22
-Nodes (8): GroupCard(), GroupCardProps, GroupManagementProps, InputModal(), InputModalProps, Modal(), ModalProps, groupExportSchema
+Cohesion: 0.28
+Nodes (8): GroupForm(), GroupCard(), effectiveGroupSettings(), groupAncestry(), wouldCreateCycle(), groupExportSchema, DEFAULT_APP_SETTINGS, g()
 
 ### Community 85 - "Community 85"
-Cohesion: 0.33
+Cohesion: 0.40
 Nodes (4): LoginForm(), LoginFormProps, Spinner(), SpinnerProps
 
 ### Community 86 - "Community 86"
@@ -282,25 +291,61 @@ Nodes (9): Audit-log viewer (§13/§16), Files, New data surface, Offline founda
 Cohesion: 0.05
 Nodes (37): eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, devDependencies, eslint (+29 more)
 
+### Community 90 - "5. Vollständiges Schema – Collections & Felder"
+Cohesion: 0.07
+Nodes (29): 10. Betrieb: Superuser, Backups, Wartung, 11. Bekannte Stolperfallen & offene Punkte, 1. Technologie-Stack & Architektur, 2. Projektstruktur, 3. Datenbank-Setup (PocketBase), 4. Prüfergebnis: erstellt `setup_collections.js` das Schema korrekt?, 5. Vollständiges Schema – Collections & Felder, 6. API-Regeln & Zugriffsmodell (+21 more)
+
+### Community 91 - "WeekView.tsx"
+Cohesion: 0.19
+Nodes (11): AddMealForm(), AddMealFormProps, MealCard, MealCardProps, OrderSummary, SkeletonWeek(), WeekView, WeekViewProps (+3 more)
+
+### Community 92 - "AuthUser"
+Cohesion: 0.19
+Nodes (12): GroupManagementProps, GroupSelector(), GroupSelectorProps, OrderForm(), OrderFormProps, AuthContext, AuthContextValue, useGroupContext() (+4 more)
+
+### Community 93 - "Statistics.tsx"
+Cohesion: 0.23
+Nodes (11): BarItem, BarList(), BarListProps, Statistics(), StatisticsProps, useStatistics(), computeStatistics(), formatPrice() (+3 more)
+
+### Community 94 - "utils.ts"
+Cohesion: 0.35
+Nodes (10): DAYS_MAP, getCurrentWeekNumber(), getCurrentYear(), nextCalendarWeek(), weekLabel(), defaultWeek(), mealService, MealPlan (+2 more)
+
+### Community 95 - "PlanHistoryModal.tsx"
+Cohesion: 0.27
+Nodes (9): ACTION_ICON, formatTime(), PlanHistoryModal(), PlanHistoryModalProps, usePlanHistory(), planHistoryService, RecordHistoryInput, PlanHistoryAction (+1 more)
+
+### Community 96 - "OrderSummary.tsx"
+Cohesion: 0.40
+Nodes (8): calculateUserTotal(), downloadFile(), exportCSV(), exportJSON(), exportKitchenPrint(), exportPDF(), exportTXT(), WeekData
+
+### Community 97 - "build-docs.sh"
+Cohesion: 0.62
+Nodes (6): build_doc(), build_index(), emit_nav(), print_foot(), print_head(), build-docs.sh script
+
+### Community 98 - "TemplateModal.tsx"
+Cohesion: 0.38
+Nodes (5): TemplateModal(), TemplateModalProps, EmptyState(), EmptyStateProps, SharedPlan
+
 ## Knowledge Gaps
-- **408 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+403 more)
+- **467 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+462 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **47 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `exportPDF()` connect `Community 66` to `Package Dependencies`?**
-  _High betweenness centrality (0.070) - this node is a cross-community bridge._
-- **Why does `jspdf` connect `Package Dependencies` to `Community 66`?**
-  _High betweenness centrality (0.069) - this node is a cross-community bridge._
+- **Why does `exportPDF()` connect `OrderSummary.tsx` to `Package Dependencies`?**
+  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+- **Why does `jspdf` connect `Package Dependencies` to `OrderSummary.tsx`?**
+  _High betweenness centrality (0.055) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _408 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Group Management UI` be split into smaller, more focused modules?**
-  _Cohesion score 0.13675213675213677 - nodes in this community are weakly interconnected._
+  _467 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Package Dependencies` be split into smaller, more focused modules?**
-  _Cohesion score 0.06666666666666667 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07407407407407407 - nodes in this community are weakly interconnected._
 - **Should `Hooks & PocketBase Core` be split into smaller, more focused modules?**
   _Cohesion score 0.023529411764705882 - nodes in this community are weakly interconnected._
 - **Should `Order Summary & Utils` be split into smaller, more focused modules?**
-  _Cohesion score 0.08739495798319327 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07926829268292683 - nodes in this community are weakly interconnected._
+- **Should `App Shell & Navigation` be split into smaller, more focused modules?**
+  _Cohesion score 0.12962962962962962 - nodes in this community are weakly interconnected._

@@ -1,5 +1,5 @@
 import type { WeekData } from '../types';
-import { calculateUserTotal, parsePrice, downloadFile } from '../lib/utils';
+import { calculateUserTotal, downloadFile } from '../lib/utils';
 
 // ─── TXT ──────────────────────────────────────────────────────────────────────
 
@@ -98,14 +98,6 @@ export function exportJSON(weekData: WeekData, label: string): void {
   );
 }
 
-export function importJSON(json: string): WeekData {
-  const parsed = JSON.parse(json);
-  return {
-    meals: parsed.meals ?? {},
-    orders: parsed.orders ?? {},
-  };
-}
-
 // ─── Kitchen Print ────────────────────────────────────────────────────────────
 
 export function exportKitchenPrint(weekData: WeekData, label: string): void {
@@ -133,22 +125,4 @@ export function exportKitchenPrint(weekData: WeekData, label: string): void {
   });
 
   downloadFile(txt, `Kueche_${label}.txt`, 'text/plain;charset=utf-8;');
-}
-
-// ─── Day summary ──────────────────────────────────────────────────────────────
-
-export function exportDaySummary(weekData: WeekData, day: string): void {
-  const dayOrders = Object.entries(weekData.orders)
-    .filter(([, orders]) => orders[day])
-    .map(([person, orders]) => ({ person, meal: orders[day] }));
-
-  let txt = `TAGESAUSWERTUNG: ${day}\n${'='.repeat(40)}\n\n`;
-  dayOrders.forEach(({ person, meal }) => {
-    txt += `${person}: #${meal.number} – ${meal.name} (${parsePrice(meal.price).toFixed(2)} €)\n`;
-  });
-
-  const total = dayOrders.reduce((s, { meal }) => s + parsePrice(meal.price), 0);
-  txt += `\nGesamt: ${dayOrders.length} Bestellungen | ${total.toFixed(2)} €`;
-
-  downloadFile(txt, `Tag_${day}.txt`, 'text/plain;charset=utf-8;');
 }
