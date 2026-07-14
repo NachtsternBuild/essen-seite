@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benutzerhandbuch · Essensplaner-Dokumentation</title>
+<meta name="description" content="Dokumentation für den Essensplaner: Nutzung, Betrieb und Installation.">
+<link rel="stylesheet" href="./assets/style.css">
+<script>(function(){try{var t=localStorage.getItem('docs-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<button class="menu-toggle" type="button" aria-label="Menü umschalten">☰</button>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="./index.html">
+      <span class="brand__logo" aria-hidden="true">🍽</span>
+      <span class="brand__text">Essensplaner<small>Dokumentation</small></span>
+    </a>
+    <nav class="nav" aria-label="Dokumente">
+        <a class="nav__link" href="./index.html"><span class="nav__icon" aria-hidden="true">🏠</span>Übersicht</a>
+        <a class="nav__link nav__link--active" href="./benutzerhandbuch.html"><span class="nav__icon" aria-hidden="true">👤</span>Benutzerhandbuch</a>
+        <a class="nav__link" href="./handbuch-admin-entwickler.html"><span class="nav__icon" aria-hidden="true">🛠</span>Admin & Entwickler</a>
+        <a class="nav__link" href="./quickstart-server.html"><span class="nav__icon" aria-hidden="true">🚀</span>Server-Quickstart</a>
+        <a class="nav__link" href="./migrations-readme.html"><span class="nav__icon" aria-hidden="true">🗄</span>DB-Schema-Referenz</a>
+    </nav>
+    <div class="sidebar__spacer"></div>
+    <div class="sidebar__footer">
+      <button id="theme-toggle" class="theme-btn" type="button">🌗 Design wechseln</button>
+      <a class="side-link" href="../">← Zur App</a>
+      <a class="side-link" href="https://github.com/NachtsternBuild/essen-seite" target="_blank" rel="noopener">GitHub-Repository ↗</a>
+    </div>
+  </aside>
+  <main class="content">
+<article class="prose">
+<h1 id="essensplaner--benutzerhandbuch">Essensplaner –
+Benutzerhandbuch</h1>
+<p>Willkommen beim <strong>Essensplaner</strong>! Diese Anleitung
+erklärt, was du in der App tun kannst, wofür jedes Menü da ist und was
+die verschiedenen Rollen und Rechte bedeuten. Sie richtet sich an alle
+Nutzerinnen und Nutzer – vom normalen Teilnehmer bis zum
+Administrator.</p>
+<hr />
+<h2 id="inhaltsverzeichnis">Inhaltsverzeichnis</h2>
+<ol type="1">
+<li><a href="#1-was-ist-der-essensplaner">Was ist der
+Essensplaner?</a></li>
+<li><a href="#2-anmelden--abmelden">Anmelden &amp; Abmelden</a></li>
+<li><a href="#3-der-aufbau-der-oberfläche">Der Aufbau der
+Oberfläche</a></li>
+<li><a href="#4-die-menüs-im-detail">Die Menüs im Detail</a></li>
+<li><a href="#5-essen-bestellen--schritt-für-schritt">Essen bestellen –
+Schritt für Schritt</a></li>
+<li><a href="#6-der-bestellschluss-0830-regel">Der Bestellschluss
+(08:30-Regel)</a></li>
+<li><a href="#7-rollen--rechte">Rollen &amp; Rechte</a></li>
+<li><a href="#8-häufige-fragen-faq">Häufige Fragen (FAQ)</a></li>
+</ol>
+<hr />
+<h2 id="1-was-ist-der-essensplaner">1. Was ist der Essensplaner?</h2>
+<p>Der Essensplaner ist eine Web-App, mit der eine Gruppe (z. B. eine
+Firma, eine Kantine oder ein Team) das <strong>Wochenmenü</strong>
+verwaltet und <strong>Essen bestellt</strong>.</p>
+<ul>
+<li>Für jede Woche gibt es einen Menüplan mit den fünf Werktagen
+(Montag–Freitag).</li>
+<li>Jeder Tag kann mehrere Gerichte enthalten – nummeriert, mit Preis,
+optional mit Kennzeichnung „vegetarisch/vegan", Allergenen und
+Beschreibung.</li>
+<li>Jede Person bestellt für sich selbst pro Tag genau ein Gericht.</li>
+<li>Administratoren pflegen die Menüs; Superuser verwalten das
+Gesamtsystem mit mehreren Gruppen.</li>
+</ul>
+<p>Die Daten sind nach <strong>Gruppen</strong> getrennt: Du siehst
+immer nur die Menüs und Bestellungen deiner eigenen Gruppe.</p>
+<hr />
+<h2 id="2-anmelden--abmelden">2. Anmelden &amp; Abmelden</h2>
+<ul>
+<li><strong>Anmelden:</strong> Öffne die App-Adresse im Browser und
+melde dich mit deiner <strong>E-Mail-Adresse</strong> und deinem
+<strong>Passwort</strong> an. Diese Zugangsdaten legt ein Administrator
+oder Superuser für dich an.</li>
+<li><strong>Abmelden:</strong> Unten links in der Seitenleiste auf
+<strong>„Abmelden"</strong> klicken.</li>
+<li><strong>Passwort vergessen?</strong> Wende dich an deinen
+Administrator – er kann dein Passwort zurücksetzen.</li>
+</ul>
+<blockquote>
+<p>Es gibt keine Selbstregistrierung: Konten werden immer von einem
+Administrator/Superuser erstellt.</p>
+</blockquote>
+<hr />
+<h2 id="3-der-aufbau-der-oberfläche">3. Der Aufbau der Oberfläche</h2>
+<p>Die App ist zweigeteilt:</p>
+<h3 id="seitenleiste-links">Seitenleiste (links)</h3>
+<ul>
+<li><strong>Logo &amp; Name</strong> oben.</li>
+<li><strong>Gruppenauswahl</strong> – nur für Superuser sichtbar, um
+zwischen Gruppen zu wechseln.</li>
+<li><strong>Navigationsmenü</strong> (siehe <a
+href="#4-die-menüs-im-detail">Abschnitt 4</a>).</li>
+<li><strong>Fußbereich</strong> mit:
+<ul>
+<li>🔔 <strong>Benachrichtigungsglocke</strong> – zeigt neue Hinweise
+(neue Woche, Planänderungen …).</li>
+<li>🌗 <strong>Theme-Umschalter</strong> – Hell/Dunkel.</li>
+<li><strong>Verbindungsanzeige</strong> – „● Online" / „○ Offline" bzw.
+„Syncing…".</li>
+<li><strong>Abmelden</strong>-Schaltfläche.</li>
+</ul></li>
+</ul>
+<h3 id="hauptbereich-rechts">Hauptbereich (rechts)</h3>
+<p>Zeigt den Inhalt des gewählten Menüpunkts. Ganz oben können hier zwei
+Banner erscheinen:</p>
+<ul>
+<li>⚠️ <strong>Wartungsbanner</strong> – wenn eine Wartung angekündigt
+ist.</li>
+<li><strong>Gruppen-Banner</strong> – zeigt Name und Farbe deiner
+aktiven Gruppe.</li>
+</ul>
+<hr />
+<h2 id="4-die-menüs-im-detail">4. Die Menüs im Detail</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Menüpunkt</th>
+<th>Wer sieht es?</th>
+<th>Wofür ist es da?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>📊 <strong>Übersicht</strong></td>
+<td>alle</td>
+<td>Persönliches Dashboard: Begrüßung, deine Wochenzusammenfassung,
+heutiges Menü. Admins/Superuser sehen zusätzlich Kennzahlen und ein
+Verwaltungs-Panel.</td>
+</tr>
+<tr class="even">
+<td>📅 <strong>Planung</strong></td>
+<td>alle (Bestellen); Menü pflegen nur Admins</td>
+<td>Die <strong>nächste</strong> Woche: hier wird das kommende Menü
+geplant und man kann vorbestellen.</td>
+</tr>
+<tr class="odd">
+<td>🗓 <strong>Aktuelle Woche</strong></td>
+<td>alle</td>
+<td>Die <strong>laufende</strong> Woche: Menü ansehen und (bis zum
+Bestellschluss) bestellen.</td>
+</tr>
+<tr class="even">
+<td>📦 <strong>Archiv</strong></td>
+<td>alle</td>
+<td>Die <strong>Vorwoche</strong> – nur zum Nachschauen
+(schreibgeschützt).</td>
+</tr>
+<tr class="odd">
+<td>📈 <strong>Statistiken</strong></td>
+<td>wenn systemweit aktiviert + Recht</td>
+<td>Auswertungen: Bestellungen, Umsatz, beliebteste Gerichte usw.</td>
+</tr>
+<tr class="even">
+<td>👥 <strong>Nutzer</strong></td>
+<td>Admins &amp; Superuser</td>
+<td>Benutzerverwaltung: Konten anlegen, bearbeiten, Gruppen zuweisen,
+Passwörter zurücksetzen.</td>
+</tr>
+<tr class="odd">
+<td>🏢 <strong>Gruppen</strong></td>
+<td>nur Superuser</td>
+<td>Gruppen anlegen, bearbeiten, archivieren und verknüpfen.</td>
+</tr>
+<tr class="even">
+<td>🗑 <strong>Papierkorb</strong></td>
+<td>Superuser (bzw. Recht „Papierkorb verwalten")</td>
+<td>Gelöschte Einträge ansehen und wiederherstellen.</td>
+</tr>
+<tr class="odd">
+<td>⚙️ <strong>Einstellungen</strong></td>
+<td>alle</td>
+<td>Darstellung, Benachrichtigungen und – je nach Rolle –
+System-Optionen.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bar_chart-übersicht-dashboard">📊 Übersicht (Dashboard)</h3>
+<p>Deine Startseite. Sie zeigt:</p>
+<ul>
+<li><strong>Begrüßung</strong> mit Name, Datum und deiner
+Rolle/Gruppe.</li>
+<li><strong>Meine Woche</strong> – deine persönliche Zusammenfassung:
+wie viele Tage du schon bestellt hast (<code>x/5</code>), dein
+Gesamtbetrag, noch offene Tage und – für die aktuelle Woche – das
+heutige Menü.</li>
+<li><strong>Für Admins zusätzlich:</strong> eine
+<strong>Gruppenwoche</strong>-Übersicht (Bestellungen, Teilnehmer,
+Umsatz, Top-Menü).</li>
+<li><strong>Für Superuser zusätzlich:</strong> eine
+<strong>Systemübersicht</strong> (aktive Gruppen, Nutzer, Admins,
+Superuser).</li>
+<li><strong>Für Admins &amp; Superuser:</strong> ein Panel
+<strong>„Verwaltung &amp; Werkzeuge"</strong> mit Schnellzugriffen
+(Nutzer, Gruppen, Planung, Statistiken). Normale Nutzer sehen dieses
+Panel nicht.</li>
+</ul>
+<h3 id="date-planung---aktuelle-woche">📅 Planung / 🗓 Aktuelle
+Woche</h3>
+<p>Beide zeigen die fünf Werktage als Karten mit den Gerichten.</p>
+<ul>
+<li><strong>Bestellen:</strong> Über das Bestellformular unten wählst du
+je Tag ein Gericht.</li>
+<li><strong>Details ansehen:</strong> Auf ein Gericht klicken, um
+Beschreibung, Allergene und Zusatzstoffe aufzuklappen.</li>
+<li><strong>Für Admins:</strong> Buttons zum Anlegen/Löschen von Plänen,
+„Aus Vorlage", „Als Vorlage", „Verlauf" und „Woche abschließen &amp;
+rotieren" (schiebt die aktuelle Woche ins Archiv und macht die geplante
+zur aktuellen).</li>
+</ul>
+<h3 id="package-archiv">📦 Archiv</h3>
+<p>Zeigt die Vorwoche als reine Ansicht. Bestellungen können hier nicht
+mehr geändert werden.</p>
+<h3 id="chart_with_upwards_trend-statistiken">📈 Statistiken</h3>
+<p>Grafische und tabellarische Auswertung (Balkenlisten, Kennzahlen).
+Superuser können außerdem <strong>Gruppen vergleichen</strong>. Der
+Menüpunkt existiert nur, wenn ein Superuser die Funktion systemweit
+eingeschaltet hat.</p>
+<h3 id="busts_in_silhouette-nutzer">👥 Nutzer</h3>
+<p>Für Admins/Superuser. Hier kannst du Konten <strong>anlegen,
+bearbeiten, löschen</strong>, <strong>Gruppen zuweisen</strong> und
+<strong>Passwörter zurücksetzen</strong>. Superuser sehen hier
+zusätzlich die <strong>Wartungssteuerung</strong> (Wartungshinweis für
+alle Nutzer planen).</p>
+<h3 id="office-gruppen">🏢 Gruppen</h3>
+<p>Nur für Superuser: Gruppen <strong>anlegen, bearbeiten,
+archivieren</strong> (statt löschen) und <strong>verknüpfen</strong>
+(eine Gruppe kann den Plan einer anderen mitnutzen – „geteilter Plan";
+Bestellungen werden trotzdem getrennt abgerechnet).</p>
+<h3 id="-papierkorb">🗑 Papierkorb</h3>
+<p>Gelöschte Datensätze landen zunächst im Papierkorb und können von
+dort <strong>wiederhergestellt</strong> werden.</p>
+<h3 id="gear-einstellungen">⚙️ Einstellungen</h3>
+<p>Enthält mehrere Reiter:</p>
+<ul>
+<li><strong>Darstellung:</strong> Theme (Hell/Dunkel/System) und
+<strong>Akzentfarbe</strong> wählen.</li>
+<li><strong>Benachrichtigungen:</strong> Desktop-Benachrichtigungen
+ein-/ausschalten.</li>
+<li><strong>Gruppen-Standards</strong> <em>(nur Superuser):</em>
+Standardwerte für neue Gruppen.</li>
+<li><strong>Protokoll</strong> <em>(mit Recht „Audit-Log
+einsehen"):</em> Aktivitätsprotokoll.</li>
+<li><strong>System:</strong> App-Infos; Superuser können hier die
+<strong>Statistiken</strong>-Funktion systemweit ein-/ausschalten.</li>
+</ul>
+<hr />
+<h2 id="5-essen-bestellen--schritt-für-schritt">5. Essen bestellen –
+Schritt für Schritt</h2>
+<ol type="1">
+<li>Gehe zu <strong>🗓 Aktuelle Woche</strong> (oder <strong>📅
+Planung</strong> für die nächste Woche).</li>
+<li>Sieh dir die Gerichte je Tag an. Klicke ein Gericht an, um Details
+zu sehen.</li>
+<li>Nutze das <strong>Bestellformular</strong> unten: Wähle pro Tag die
+gewünschte Gericht-Nummer.</li>
+<li>Deine Bestellung wird sofort gespeichert. In <strong>Übersicht →
+Meine Woche</strong> siehst du deinen Stand (<code>x/5</code> Tage,
+Gesamtbetrag, offene Tage).</li>
+<li><strong>Ändern/Stornieren:</strong> solange der Tag noch nicht
+gesperrt ist (siehe nächster Abschnitt), kannst du deine Bestellung
+anpassen.</li>
+</ol>
+<blockquote>
+<p>Pro Tag ist genau <strong>eine</strong> Bestellung möglich. Wählst du
+ein anderes Gericht, ersetzt es die vorige Bestellung für diesen
+Tag.</p>
+</blockquote>
+<hr />
+<h2 id="6-der-bestellschluss-0830-regel">6. Der Bestellschluss
+(08:30-Regel)</h2>
+<p>In der <strong>aktuellen Woche</strong> sind Tage automatisch
+gesperrt, sobald der Bestellschluss erreicht ist:</p>
+<ul>
+<li><strong>Vergangene Tage</strong> der Woche sind gesperrt.</li>
+<li>Der <strong>heutige Tag</strong> ist ab <strong>08:30 Uhr</strong>
+gesperrt.</li>
+<li>Am <strong>Wochenende</strong> (Sa/So) ist die gesamte laufende
+Woche gesperrt.</li>
+</ul>
+<p>Gesperrte Tage lassen sich nicht mehr bestellen oder ändern. Für die
+<strong>Planung (nächste Woche)</strong> gibt es keine Sperre – dort
+kannst du jederzeit vorbestellen.</p>
+<hr />
+<h2 id="7-rollen--rechte">7. Rollen &amp; Rechte</h2>
+<p>Es gibt drei Standardrollen. Sie bestimmen, was du sehen und tun
+darfst.</p>
+<h3 id="bust_in_silhouette-benutzer">👤 Benutzer</h3>
+<p>Die Standardrolle. Darf:</p>
+<ul>
+<li>Essenspläne <strong>ansehen</strong>
+(<code>Essenspläne ansehen</code>)</li>
+<li><strong>Eigene Bestellungen</strong> aufgeben und ändern
+(<code>Bestellungen aufgeben</code>)</li>
+</ul>
+<p>Ein Benutzer verwaltet ausschließlich seine eigenen Bestellungen und
+sieht nur seine eigene Gruppe.</p>
+<h3 id="-administrator-gruppenadministrator">🛠 Administrator
+(Gruppenadministrator)</h3>
+<p>Alles, was ein Benutzer darf, <strong>plus</strong> für die
+<strong>eigene Gruppe</strong>:</p>
+<ul>
+<li>Benutzer ansehen, erstellen, bearbeiten, löschen</li>
+<li>Essenspläne bearbeiten und löschen, <strong>Vorlagen</strong>
+verwalten</li>
+<li><strong>Alle Bestellungen</strong> der Gruppe ansehen und
+verwalten</li>
+<li>Daten <strong>exportieren/importieren</strong></li>
+<li><strong>Statistiken</strong> ansehen</li>
+</ul>
+<p>Ein Administrator wirkt immer nur innerhalb seiner Gruppe.</p>
+<h3 id="-superuser">🛡 Superuser</h3>
+<p>Hat <strong>alle Rechte</strong> und arbeitet
+<strong>gruppenübergreifend</strong>. Zusätzlich zu den
+Admin-Rechten:</p>
+<ul>
+<li><strong>Gruppen</strong> anlegen, bearbeiten, löschen,
+verknüpfen</li>
+<li><strong>Rollen &amp; Rechte</strong> verwalten</li>
+<li><strong>Audit-Log</strong> (Protokoll) einsehen</li>
+<li><strong>Papierkorb</strong> verwalten</li>
+<li><strong>Systemeinstellungen</strong> (inkl. Wartungsmodus und
+Statistik-Schalter)</li>
+</ul>
+<h3 id="was-bedeuten-die-einzelnen-rechte">Was bedeuten die einzelnen
+Rechte?</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Recht</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Essenspläne ansehen</td>
+<td>Menüs sehen</td>
+</tr>
+<tr class="even">
+<td>Bestellungen aufgeben</td>
+<td>Eigene Bestellungen erstellen/ändern</td>
+</tr>
+<tr class="odd">
+<td>Benutzer ansehen/erstellen/bearbeiten/löschen</td>
+<td>Kontenverwaltung</td>
+</tr>
+<tr class="even">
+<td>Essenspläne bearbeiten/löschen</td>
+<td>Menüs pflegen</td>
+</tr>
+<tr class="odd">
+<td>Vorlagen verwalten</td>
+<td>Menüvorlagen speichern/übernehmen</td>
+</tr>
+<tr class="even">
+<td>Alle Bestellungen ansehen</td>
+<td>Bestellungen anderer in der Gruppe sehen</td>
+</tr>
+<tr class="odd">
+<td>Daten exportieren/importieren</td>
+<td>z. B. PDF-Export, Datenübernahme</td>
+</tr>
+<tr class="even">
+<td>Statistiken ansehen</td>
+<td>Auswertungen öffnen</td>
+</tr>
+<tr class="odd">
+<td>Gruppen erstellen/bearbeiten/löschen</td>
+<td>Gruppenverwaltung</td>
+</tr>
+<tr class="even">
+<td>Rollen &amp; Rechte verwalten</td>
+<td>Berechtigungen anpassen</td>
+</tr>
+<tr class="odd">
+<td>Audit-Log einsehen</td>
+<td>Aktivitätsprotokoll lesen</td>
+</tr>
+<tr class="even">
+<td>Papierkorb verwalten</td>
+<td>Gelöschtes wiederherstellen</td>
+</tr>
+<tr class="odd">
+<td>Systemeinstellungen</td>
+<td>Globale Optionen ändern</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Hinweis: Neben den Standardrollen können Superuser eigene
+<strong>Rollen</strong> mit einer individuellen Rechtekombination
+anlegen und Nutzern zuweisen.</p>
+</blockquote>
+<hr />
+<h2 id="8-häufige-fragen-faq">8. Häufige Fragen (FAQ)</h2>
+<p><strong>Ich sehe keine Menüs – nur „Keine Gruppe
+ausgewählt".</strong> Du bist noch keiner Gruppe zugewiesen. Bitte einen
+Administrator, dich einer Gruppe hinzuzufügen.</p>
+<p><strong>Warum kann ich für heute nicht mehr bestellen?</strong> Der
+Bestellschluss war um 08:30 Uhr. Bestelle rechtzeitig oder nutze die
+Planung für die nächste Woche.</p>
+<p><strong>Wo sehe ich, was ich diese Woche schon bestellt
+habe?</strong> In <strong>📊 Übersicht → Meine Woche</strong>.</p>
+<p><strong>Ich bekomme keine Desktop-Benachrichtigungen.</strong>
+Aktiviere sie in <strong>Einstellungen → Benachrichtigungen</strong> und
+erlaube sie im Browser. Die 🔔 Glocke in der Seitenleiste zeigt Hinweise
+immer an – unabhängig davon.</p>
+<p><strong>Kann ich die Farben/das Design ändern?</strong> Ja:
+<strong>Einstellungen → Darstellung</strong> (Theme und
+Akzentfarbe).</p>
+<p><strong>Ich habe versehentlich etwas gelöscht.</strong> Ein Superuser
+(oder ein Nutzer mit dem Recht „Papierkorb verwalten") kann es im
+<strong>🗑 Papierkorb</strong> wiederherstellen.</p>
+</article>
+    <footer class="doc-footer">
+      <p>Essensplaner-Dokumentation · automatisch aus den Markdown-Quellen in <code>doc/</code> erzeugt.</p>
+    </footer>
+  </main>
+</div>
+<script src="./assets/app.js"></script>
+</body>
+</html>

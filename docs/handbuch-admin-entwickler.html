@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin & Entwickler · Essensplaner-Dokumentation</title>
+<meta name="description" content="Dokumentation für den Essensplaner: Nutzung, Betrieb und Installation.">
+<link rel="stylesheet" href="./assets/style.css">
+<script>(function(){try{var t=localStorage.getItem('docs-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<button class="menu-toggle" type="button" aria-label="Menü umschalten">☰</button>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="./index.html">
+      <span class="brand__logo" aria-hidden="true">🍽</span>
+      <span class="brand__text">Essensplaner<small>Dokumentation</small></span>
+    </a>
+    <nav class="nav" aria-label="Dokumente">
+        <a class="nav__link" href="./index.html"><span class="nav__icon" aria-hidden="true">🏠</span>Übersicht</a>
+        <a class="nav__link" href="./benutzerhandbuch.html"><span class="nav__icon" aria-hidden="true">👤</span>Benutzerhandbuch</a>
+        <a class="nav__link nav__link--active" href="./handbuch-admin-entwickler.html"><span class="nav__icon" aria-hidden="true">🛠</span>Admin & Entwickler</a>
+        <a class="nav__link" href="./quickstart-server.html"><span class="nav__icon" aria-hidden="true">🚀</span>Server-Quickstart</a>
+        <a class="nav__link" href="./migrations-readme.html"><span class="nav__icon" aria-hidden="true">🗄</span>DB-Schema-Referenz</a>
+    </nav>
+    <div class="sidebar__spacer"></div>
+    <div class="sidebar__footer">
+      <button id="theme-toggle" class="theme-btn" type="button">🌗 Design wechseln</button>
+      <a class="side-link" href="../">← Zur App</a>
+      <a class="side-link" href="https://github.com/NachtsternBuild/essen-seite" target="_blank" rel="noopener">GitHub-Repository ↗</a>
+    </div>
+  </aside>
+  <main class="content">
+<article class="prose">
+<h1 id="essensplaner--handbuch-für-admins--entwickler">Essensplaner –
+Handbuch für Admins &amp; Entwickler</h1>
+<p>Technische Dokumentation zu Architektur, Datenbank-Setup, Schema,
+Rechtemodell und Betrieb. Für die Endnutzer-Sicht siehe <a
+href="./benutzerhandbuch.html">BENUTZERHANDBUCH.md</a>; für eine frische
+Server-Installation siehe <a
+href="./quickstart-server.html">QUICKSTART_SERVER.md</a>.</p>
+<hr />
+<h2 id="inhaltsverzeichnis">Inhaltsverzeichnis</h2>
+<ol type="1">
+<li><a href="#1-technologie-stack--architektur">Technologie-Stack &amp;
+Architektur</a></li>
+<li><a href="#2-projektstruktur">Projektstruktur</a></li>
+<li><a href="#3-datenbank-setup-pocketbase">Datenbank-Setup
+(PocketBase)</a></li>
+<li><a
+href="#4-prüfergebnis-erstellt-setup_collectionsjs-das-schema-korrekt">Prüfergebnis:
+erstellt <code>setup_collections.js</code> das Schema korrekt?</a></li>
+<li><a href="#5-vollständiges-schema--collections--felder">Vollständiges
+Schema – Collections &amp; Felder</a></li>
+<li><a href="#6-api-regeln--zugriffsmodell">API-Regeln &amp;
+Zugriffsmodell</a></li>
+<li><a href="#7-rechte--und-rollenmodell">Rechte- und
+Rollenmodell</a></li>
+<li><a
+href="#8-settings-schlüssel"><code>settings</code>-Schlüssel</a></li>
+<li><a href="#9-entwickler-workflow">Entwickler-Workflow</a></li>
+<li><a href="#10-betrieb-superuser-backups-wartung">Betrieb: Superuser,
+Backups, Wartung</a></li>
+<li><a href="#11-bekannte-stolperfallen--offene-punkte">Bekannte
+Stolperfallen &amp; offene Punkte</a></li>
+</ol>
+<hr />
+<h2 id="1-technologie-stack--architektur">1. Technologie-Stack &amp;
+Architektur</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Schicht</th>
+<th>Technologie</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Frontend</td>
+<td><strong>React 19</strong> + <strong>TypeScript</strong>, Build mit
+<strong>Vite 7</strong></td>
+</tr>
+<tr class="even">
+<td>Styling</td>
+<td>Handgeschriebenes CSS mit Design-Tokens
+(<code>src/styles/</code>)</td>
+</tr>
+<tr class="odd">
+<td>Backend</td>
+<td><strong>PocketBase</strong> (Single-Binary, SQLite) – Auth, DB,
+API-Regeln</td>
+</tr>
+<tr class="even">
+<td>Validierung</td>
+<td><strong>zod</strong></td>
+</tr>
+<tr class="odd">
+<td>Export</td>
+<td><strong>jspdf</strong> + <strong>jspdf-autotable</strong>
+(PDF-Export)</td>
+</tr>
+<tr class="even">
+<td>Tests</td>
+<td><strong>vitest</strong> + Testing Library</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Architekturprinzip (Schichten):</strong></p>
+<pre><code>Komponenten (src/components)          ← UI
+   │  benutzen
+Hooks (src/hooks)                     ← Zustands- &amp; Ladelogik (useMeals, useOrders, …)
+   │  rufen
+Services (src/services)               ← fachliche Operationen (mealService, orderService, …)
+   │  über
+Repositories (src/repositories)       ← generischer PocketBase-CRUD-Zugriff
+   │  gegen
+PocketBase-Client (src/lib/pocketbase.ts)</code></pre>
+<ul>
+<li><strong>Contexts</strong> (<code>src/context</code>) liefern
+Querschnittsdaten: Auth, aktive Gruppe, Berechtigungen, Theme,
+Toasts.</li>
+<li><strong><code>src/lib</code></strong> enthält reine Hilfsfunktionen
+(Preise, Statistik, Validierung, Berechtigungen, Offline-Queue).</li>
+<li>Der PocketBase-Client verwendet im <strong>Dev-Modus</strong>
+<code>http://127.0.0.1:8090</code>, im
+<strong>Produktions-Build</strong> <code>undefined</code> =
+<strong>Same-Origin</strong> (siehe <code>src/lib/pocketbase.ts</code>).
+Das ist der Grund, warum in Produktion App und API bequem hinter
+<strong>einer</strong> Domain liegen können (siehe
+Server-Quickstart).</li>
+<li>Es werden <strong>keine</strong> PocketBase-Realtime-Subscriptions
+verwendet; die App lädt Daten bei Bedarf neu. Für ein
+Reverse-Proxy-Setup ist daher kein SSE-Tuning nötig.</li>
+</ul>
+<hr />
+<h2 id="2-projektstruktur">2. Projektstruktur</h2>
+<pre><code>src/
+  components/     UI-Komponenten (Dashboard, WeekView, OrderForm, Settings, …)
+  context/        React-Contexts (Auth, Group, Permission, Theme, Toast)
+  hooks/          Daten-Hooks (useMeals, useOrders, useUsers, useGroups, …)
+  services/       Fachservices (meal, order, group, user, auth, audit, …)
+  repositories/   Generischer BaseRepository-CRUD
+  lib/            Utilities (utils, statistics, validation, permissions, …)
+  styles/         CSS (theme, base, cards, buttons, forms, stats, …)
+  types/          Zentrale TypeScript-Typen
+  __tests__/      Unit-Tests
+migrations/
+  setup_collections.js   ← DIE maßgebliche Schema-Datei (Quelle der Wahrheit)
+  README.md              ← ausführliche Schema-/Setup-Referenz
+pb_migrations/           ← was PocketBase tatsächlich beim Start ausführt
+pocketbase               ← PocketBase-Binary
+pb_data/                 ← Live-Datenbank (SQLite) + generierte types.d.ts</code></pre>
+<hr />
+<h2 id="3-datenbank-setup-pocketbase">3. Datenbank-Setup
+(PocketBase)</h2>
+<p>Das gesamte Schema wird <strong>deklarativ</strong> durch
+<strong>eine</strong> Migrationsdatei angelegt:
+<code>migrations/setup_collections.js</code>. Sie ist
+<strong>idempotent</strong>:</p>
+<ul>
+<li>Collections/Felder werden nur angelegt, wenn sie fehlen.</li>
+<li><strong>Alle API-Regeln</strong> werden bei jedem Lauf neu auf den
+korrekten Wert gesetzt.</li>
+<li>Fehlende <code>created</code>/<code>updated</code>-Zeitstempel
+werden nachgerüstet (PocketBase ≥ 0.23 legt sie nicht mehr automatisch
+an).</li>
+<li>Die Down-Migration ist bewusst ein No-Op.</li>
+</ul>
+<p><strong>Fresh Install (Kurzfassung):</strong></p>
+<pre class="bash"><code>mkdir -p pb_migrations
+cp migrations/setup_collections.js pb_migrations/
+./pocketbase serve            # führt die Migration beim Start einmalig aus</code></pre>
+<p>Details, manuelle Admin-UI-Regeln und die Historie älterer
+Migrationen stehen in <a
+href="./migrations-readme.html"><code>migrations/README.md</code></a>.</p>
+<blockquote>
+<p><strong>Wichtig:</strong> Bei einer Neuinstallation
+<strong>nur</strong> <code>setup_collections.js</code> nach
+<code>pb_migrations/</code> kopieren – nicht zusätzlich die alten
+nummerierten Migrationen. Sonst werden Collections doppelt angelegt und
+der Lauf schlägt fehl.</p>
+</blockquote>
+<hr />
+<h2
+id="4-prüfergebnis-erstellt-setup_collectionsjs-das-schema-korrekt">4.
+Prüfergebnis: erstellt <code>setup_collections.js</code> das Schema
+korrekt?</h2>
+<p><strong>Ja – für eine Neuinstallation legt
+<code>migrations/setup_collections.js</code> das komplette Layout mit
+allen Regeln korrekt an.</strong> Gegen die laufende Datenbank
+verifiziert (<code>pb_data/data.db</code>,
+<code>_collections</code>):</p>
+<ul>
+<li>✅ Alle <strong>11 App-Collections</strong> existieren:
+<code>groups</code>, <code>group_memberships</code>,
+<code>meal_plans</code>, <code>orders</code>, <code>shared_plans</code>,
+<code>settings</code>, <code>roles</code>, <code>audit_logs</code>,
+<code>trash</code>, <code>plan_history</code>,
+<code>notifications</code> (dazu die PocketBase-Systemcollections
+<code>users</code>, <code>_superusers</code>, <code>_authOrigins</code>,
+<code>_externalAuths</code>, <code>_mfas</code>,
+<code>_otps</code>).</li>
+<li>✅ Die <strong>API-Regeln</strong> der Schlüssel-Collections
+(<code>users</code>, <code>groups</code>, <code>meal_plans</code>,
+<code>orders</code>) stimmen mit dem Skript überein.</li>
+<li>✅ <code>roles</code> hat den erwarteten
+<strong>Unique-Index</strong> auf <code>slug</code>,
+<code>notifications</code> den Index auf <code>user</code>.</li>
+</ul>
+<p><strong>Zwei kleine Abweichungen zwischen „Skript" und „Live-DB" –
+kein Fehler, aber wissenswert:</strong></p>
+<ol type="1">
+<li>Die Live-DB enthält zwei zusätzliche, <strong>über die Admin-UI
+erzeugte</strong> nummerierte Migrationen:
+<ul>
+<li><code>pb_migrations/1782990023_updated_orders.js</code> – verfeinert
+die <code>orders</code>-<code>update</code>/<code>delete</code>-Regel
+von <code>user.id = @request.auth.id</code> zu
+<code>user = @request.auth.id</code> (funktional gleichwertig in
+PocketBase).</li>
+<li><code>pb_migrations/1782993933_updated_users.js</code> – setzt die
+<code>users</code>-<strong><code>manageRule</code></strong>
+(<code>is_superuser || is_admin</code>), damit Admins/Superuser
+Passwörter zurücksetzen können, <strong>ohne</strong> das alte Passwort
+anzugeben.</li>
+</ul></li>
+<li>Die <strong>Kopie</strong> in
+<code>pb_migrations/setup_collections.js</code> ist etwas
+<strong>älter</strong> als die kanonische
+<code>migrations/setup_collections.js</code>: In der kanonischen Datei
+ist die <code>manageRule</code> bereits <strong>inline</strong>
+enthalten (Zeilen 99–110), in der pb_migrations-Kopie noch nicht – dort
+kommt sie über die nummerierte Migration <code>1782993933</code>.</li>
+</ol>
+<p><strong>Konsequenz für Fresh Installs:</strong> Wer die
+<strong>kanonische</strong> <code>migrations/setup_collections.js</code>
+verwendet, bekommt die <code>manageRule</code> inline und ein voll
+funktionsfähiges Schema. Die Orders-Regel-Variante
+<code>user.id = …</code> ist gleichwertig zu <code>user = …</code>.</p>
+<p><strong>Empfehlung (Aufräumen, optional):</strong></p>
+<ul>
+<li>Die veraltete Kopie <code>pb_migrations/setup_collections.js</code>
+durch die kanonische Version ersetzen, damit beide Dateien identisch
+sind.</li>
+<li>Die beiden Admin-UI-Verfeinerungen (<code>orders</code>-Regel,
+<code>users.manageRule</code>) sind in der kanonischen Datei bereits
+abgedeckt bzw. gleichwertig – die nummerierten Migrationen können nach
+erfolgreichem Lauf im Repo bleiben (Historie) oder für Fresh Installs
+weggelassen werden.</li>
+</ul>
+<blockquote>
+<p><strong>Bekannte Einschränkung der Idempotenz:</strong> Trifft
+<code>ensureCollection</code> auf eine <strong>bereits
+existierende</strong> Collection, werden nur deren
+<strong>Regeln</strong> neu gesetzt – <strong>fehlende Felder</strong>
+aus <code>def.fields</code> werden dann <strong>nicht</strong> ergänzt
+(Ausnahme: <code>groups</code>, das explizite
+<code>ensureField</code>-Backstops besitzt). Bei einem echten Fresh
+Install ist das irrelevant, weil die Felder mit der Collection zusammen
+entstehen. Wer nachträglich ein Feld zu einer
+<strong>bestehenden</strong> Nicht-<code>groups</code>- Collection
+hinzufügt, sollte einen expliziten <code>ensureField</code>-Backstop
+ergänzen oder das Feld einmalig über die Admin-UI anlegen.</p>
+</blockquote>
+<hr />
+<h2 id="5-vollständiges-schema--collections--felder">5. Vollständiges
+Schema – Collections &amp; Felder</h2>
+<p>Maßgeblich ist der Code in
+<code>migrations/setup_collections.js</code>; die folgende Tabelle
+erklärt <strong>wofür</strong> die Felder da sind.</p>
+<h3 id="users-auth-collection-erweitert"><code>users</code>
+(Auth-Collection, erweitert)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feld</th>
+<th>Typ</th>
+<th>Zweck</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>name</code>, <code>email</code>, <code>password</code></td>
+<td>(Standard-Auth)</td>
+<td>Anmeldedaten</td>
+</tr>
+<tr class="even">
+<td><code>is_admin</code></td>
+<td>bool</td>
+<td>Gruppen-Administrator</td>
+</tr>
+<tr class="odd">
+<td><code>is_superuser</code></td>
+<td>bool</td>
+<td>Vollzugriff, gruppenübergreifend</td>
+</tr>
+<tr class="even">
+<td><code>info</code></td>
+<td>text (max 100)</td>
+<td>Freitext-Zusatz zum Nutzer</td>
+</tr>
+<tr class="odd">
+<td><code>group_id</code></td>
+<td>text</td>
+<td><strong>primäre Gruppe</strong> – Basis der Zugriffsprüfungen (s.
+u.)</td>
+</tr>
+<tr class="even">
+<td><code>role</code></td>
+<td>relation → <code>roles</code></td>
+<td>optionale primäre Rechtequelle; sonst Fallback auf
+<code>is_admin</code>/<code>is_superuser</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="groups"><code>groups</code></h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feld</th>
+<th>Typ</th>
+<th>Zweck</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>name</code></td>
+<td>text (req, max 60)</td>
+<td>Gruppenname</td>
+</tr>
+<tr class="even">
+<td><code>description</code></td>
+<td>text (max 200)</td>
+<td>Beschreibung</td>
+</tr>
+<tr class="odd">
+<td><code>color</code></td>
+<td>text</td>
+<td>Hex-Farbe für UI-Kennzeichnung</td>
+</tr>
+<tr class="even">
+<td><code>archived</code></td>
+<td>bool</td>
+<td>Soft-Archiv (ausgeblendet statt gelöscht)</td>
+</tr>
+<tr class="odd">
+<td><code>linked_group</code></td>
+<td>text</td>
+<td>ID einer Gruppe, deren Plan mitgenutzt wird (Text, keine Relation –
+PocketBase verbietet Selbstreferenzen)</td>
+</tr>
+<tr class="even">
+<td><code>settings</code></td>
+<td>json</td>
+<td>Pro-Gruppe: Logo, Sprache, Zeitzone, Währung, Bestellschluss,
+Export-Standard</td>
+</tr>
+<tr class="odd">
+<td><code>parent_group</code></td>
+<td>text</td>
+<td>optionale Hierarchie (Text, keine Relation)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="group_memberships"><code>group_memberships</code></h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feld</th>
+<th>Typ</th>
+<th>Zweck</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>group</code></td>
+<td>relation → <code>groups</code></td>
+<td>Gruppe</td>
+</tr>
+<tr class="even">
+<td><code>user</code></td>
+<td>relation → <code>users</code></td>
+<td>Nutzer</td>
+</tr>
+<tr class="odd">
+<td><code>role</code></td>
+<td>select <code>admin</code>|<code>member</code></td>
+<td>Kennzeichnung Gruppen-Admin vs. Mitglied</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>group_memberships</code> dient primär der
+<strong>Admin-Kennzeichnung</strong>. Die Zugriffsprüfung der API-Regeln
+läuft aus Zuverlässigkeitsgründen über <code>users.group_id</code>
+(siehe <a href="#6-api-regeln--zugriffsmodell">Abschnitt 6</a>).</p>
+</blockquote>
+<h3 id="meal_plans"><code>meal_plans</code></h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feld</th>
+<th>Typ</th>
+<th>Zweck</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>group</code></td>
+<td>relation → <code>groups</code></td>
+<td>Besitzergruppe</td>
+</tr>
+<tr class="even">
+<td><code>year</code></td>
+<td>number</td>
+<td>Jahr</td>
+</tr>
+<tr class="odd">
+<td><code>week_number</code></td>
+<td>number</td>
+<td>Kalenderwoche</td>
+</tr>
+<tr class="even">
+<td><code>status</code></td>
+<td>select
+<code>upcoming</code>|<code>current</code>|<code>archived</code></td>
+<td>Wochenstatus</td>
+</tr>
+<tr class="odd">
+<td><code>meals</code></td>
+<td>json (<code>DayMeals</code>)</td>
+<td>Menü je Tag (siehe Meal-Struktur unten)</td>
+</tr>
+<tr class="even">
+<td><code>synced_from</code></td>
+<td>text</td>
+<td>Quell-Plan-ID bei geteiltem Plan (Text, keine Relation)</td>
+</tr>
+<tr class="odd">
+<td><code>sync_mode</code></td>
+<td>select <code>copy</code>|<code>sync</code></td>
+<td>Übernahme-Modus</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>meals</code>-JSON (<code>DayMeals</code> →
+<code>MealItem[]</code> je Tag):</strong></p>
+<pre class="jsonc"><code>{
+  &quot;Montag&quot;: [
+    {
+      &quot;number&quot;: &quot;1&quot;,          // Anzeige-Nummer
+      &quot;name&quot;: &quot;Spaghetti Bolognese&quot;,
+      &quot;price&quot;: 4.90,
+      &quot;vegetarian&quot;: false,    // optional
+      &quot;vegan&quot;: false,         // optional
+      &quot;allergens&quot;: [&quot;A&quot;,&quot;C&quot;], // optional
+      &quot;additives&quot;: [&quot;1&quot;,&quot;2&quot;], // optional
+      &quot;description&quot;: &quot;…&quot;      // optional, aufklappbar
+    }
+  ],
+  &quot;Dienstag&quot;: [ /* … */ ]
+}</code></pre>
+<h3 id="orders"><code>orders</code></h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feld</th>
+<th>Typ</th>
+<th>Zweck</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>meal_plan</code></td>
+<td>relation → <code>meal_plans</code> (cascade)</td>
+<td>zugehöriger Plan</td>
+</tr>
+<tr class="even">
+<td><code>group</code></td>
+<td>relation → <code>groups</code></td>
+<td>Gruppe (für Zugriffsprüfung)</td>
+</tr>
+<tr class="odd">
+<td><code>user</code></td>
+<td>relation → <code>users</code></td>
+<td>Besteller</td>
+</tr>
+<tr class="even">
+<td><code>user_name</code></td>
+<td>text</td>
+<td>denormalisierter Name (für Anzeige/Export)</td>
+</tr>
+<tr class="odd">
+<td><code>user_info</code></td>
+<td>text</td>
+<td>Zusatz aus <code>users.info</code></td>
+</tr>
+<tr class="even">
+<td><code>day</code></td>
+<td>select Montag…Freitag</td>
+<td>Tag</td>
+</tr>
+<tr class="odd">
+<td><code>meal_number</code>, <code>meal_name</code>,
+<code>meal_price</code></td>
+<td>text/text/number</td>
+<td>gewähltes Gericht (denormalisiert)</td>
+</tr>
+<tr class="even">
+<td><code>edited</code></td>
+<td>bool</td>
+<td>wurde nach Erstellung geändert</td>
+</tr>
+</tbody>
+</table>
+<h3 id="shared_plans-vorlagen"><code>shared_plans</code> (Vorlagen)</h3>
+<p><code>source_plan</code>, <code>source_group</code>,
+<code>source_group_name</code>, <code>shared_by</code>,
+<code>shared_by_name</code>, <code>name</code>,
+<code>description</code>, <code>week_label</code>, <code>meals</code>
+(json). Speichert wiederverwendbare Menüvorlagen, die Admins
+veröffentlichen und übernehmen können.</p>
+<h3 id="settings-key-value"><code>settings</code> (Key-Value)</h3>
+<p><code>key</code> (text), <code>value</code> (json). Globale
+Systemwerte – siehe <a href="#8-settings-schlüssel">Abschnitt 8</a>.</p>
+<h3 id="roles"><code>roles</code></h3>
+<p><code>name</code>, <code>slug</code> (unique),
+<code>description</code>, <code>permissions</code> (json: Liste von
+Permission-Keys), <code>is_system</code> (bool), <code>group</code>
+(text, optional; leer = global).</p>
+<h3 id="audit_logs"><code>audit_logs</code></h3>
+<p><code>user</code>, <code>user_name</code>, <code>action</code>
+(<code>login</code>/<code>logout</code>/<code>create</code>/<code>update</code>/<code>delete</code>/<code>restore</code>/<code>import</code>/<code>export</code>/<code>permission_change</code>/<code>group_create</code>),
+<code>entity_type</code>, <code>entity_id</code>, <code>group</code>,
+<code>details</code> (json). Append-only.</p>
+<h3 id="trash"><code>trash</code></h3>
+<p><code>collection_name</code>, <code>record_id</code>,
+<code>data</code> (JSON-Snapshot), <code>deleted_by</code>,
+<code>deleted_by_name</code>, <code>group</code>. Ermöglicht
+Wiederherstellung gelöschter Datensätze.</p>
+<h3 id="plan_history"><code>plan_history</code></h3>
+<p><code>meal_plan</code> (cascade), <code>group</code>,
+<code>user</code>, <code>user_name</code>, <code>action</code>
+(<code>created</code>/<code>meal_added</code>/<code>meal_removed</code>/<code>meals_updated</code>/<code>status_changed</code>),
+<code>day</code>, <code>summary</code>, <code>before</code> (json),
+<code>after</code> (json). Änderungshistorie je Plan.</p>
+<h3 id="notifications"><code>notifications</code></h3>
+<p><code>user</code> (Empfänger, cascade), <code>group</code>,
+<code>type</code>
+(<code>order_deadline</code>/<code>new_week</code>/<code>plan_changed</code>/<code>new_group</code>/<code>admin_message</code>/<code>system</code>),
+<code>title</code>, <code>message</code>, <code>read</code> (bool).</p>
+<hr />
+<h2 id="6-api-regeln--zugriffsmodell">6. API-Regeln &amp;
+Zugriffsmodell</h2>
+<p>Die Regeln stehen 1:1 in
+<code>migrations/setup_collections.js</code>; die Prosafassung mit
+kopierbaren Regel-Strings in <a
+href="./migrations-readme.html"><code>migrations/README.md</code>
+§5–6</a>. Zentrale Punkte:</p>
+<ul>
+<li><strong>Gruppen-Scoping über <code>users.group_id</code></strong>,
+<strong>nicht</strong> über <code>@collection.group_memberships</code>.
+Grund: Auf einer leeren DB existiert <code>group_memberships</code> beim
+Anlegen von <code>groups</code> (wird zuerst erstellt) noch nicht, und
+<code>=</code> auf einem Mehrfach-Join ist unzuverlässig (führte früher
+dazu, dass Bestellungen nach Reload „verschwanden", obwohl sie
+gespeichert waren). Damit das greift, setzt die App bei
+<code>addMember</code>/<code>moveMember</code> automatisch das
+<code>group_id</code> des Nutzers.</li>
+<li><strong><code>meal_plans</code></strong> sind für <strong>jeden
+authentifizierten Nutzer</strong> lesbar (nötig für geteilte Pläne);
+Änderungen nur durch Superuser oder Gruppen-Admin der besitzenden
+Gruppe.</li>
+<li><strong><code>orders</code></strong>: Lesen/Erstellen für
+Gruppenmitglieder; eigene Bestellungen änder-/löschbar; Gruppen-Admins
+verwalten alle Bestellungen ihrer Gruppe.</li>
+<li><strong><code>users.manageRule</code></strong>
+(<code>is_superuser || is_admin</code>): erlaubt Admins/Superusern,
+Nutzer zu verwalten (z. B. Passwort-Reset) ohne das alte Passwort.</li>
+<li><strong><code>audit_logs</code>/<code>plan_history</code></strong>:
+von jedem authentifizierten Nutzer <strong>beschreibbar</strong>
+(append-only), aber nur von Superusern lesbar/löschbar bzw. gruppenweit
+für <code>plan_history</code>.</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>Feldweise Einschränkung nicht per DB-Regel:</strong> Die
+<code>users</code>-<code>updateRule</code> erlaubt Admins Updates an
+fremden Nutzern (u. a. <code>group_id</code>-Reassignment). Dass Admins
+<strong>nicht</strong> die Flags
+<code>is_admin</code>/<code>is_superuser</code> fremder Konten ändern,
+wird in der <strong>App-Logik</strong> sichergestellt – eine
+PocketBase-Regel kann nicht einzelne Felder unterscheiden. Bei einer
+eigenen API-Anbindung ist das zu beachten.</p>
+</blockquote>
+<hr />
+<h2 id="7-rechte--und-rollenmodell">7. Rechte- und Rollenmodell</h2>
+<p>Definiert in <code>src/lib/permissions.ts</code>.</p>
+<p><strong>20 Permission-Keys</strong>, gruppiert:</p>
+<ul>
+<li><strong>Benutzer:</strong> <code>VIEW_USERS</code>,
+<code>CREATE_USERS</code>, <code>EDIT_USERS</code>,
+<code>DELETE_USERS</code></li>
+<li><strong>Essenspläne:</strong> <code>VIEW_MEALS</code>,
+<code>EDIT_MEALS</code>, <code>DELETE_MEALS</code>,
+<code>MANAGE_TEMPLATES</code></li>
+<li><strong>Bestellungen:</strong> <code>PLACE_ORDERS</code>,
+<code>VIEW_ORDERS</code></li>
+<li><strong>Daten:</strong> <code>EXPORT_DATA</code>,
+<code>IMPORT_DATA</code>, <code>VIEW_STATISTICS</code></li>
+<li><strong>Gruppen:</strong> <code>CREATE_GROUPS</code>,
+<code>EDIT_GROUPS</code>, <code>DELETE_GROUPS</code></li>
+<li><strong>System:</strong> <code>MANAGE_PERMISSIONS</code>,
+<code>VIEW_AUDIT_LOG</code>, <code>MANAGE_TRASH</code>,
+<code>SYSTEM_SETTINGS</code></li>
+</ul>
+<p><strong>Auflösung der effektiven Rechte
+(<code>resolvePermissions</code>), erster Treffer gewinnt:</strong></p>
+<ol type="1">
+<li><strong>Superuser</strong> → <strong>alle</strong> Rechte.</li>
+<li>Ein explizit zugewiesenes DB-<strong><code>role</code></strong> →
+dessen Permission-Liste.</li>
+<li>Sonst Fallback auf die Flags:
+<ul>
+<li><code>is_admin = true</code> →
+<strong>Gruppenadministrator</strong>-Set</li>
+<li>sonst → <strong>Benutzer</strong>-Set (<code>VIEW_MEALS</code>,
+<code>PLACE_ORDERS</code>)</li>
+</ul></li>
+</ol>
+<p><strong>Standardrollen-Sets:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Rolle</th>
+<th>Rechte</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Benutzer</strong></td>
+<td><code>VIEW_MEALS</code>, <code>PLACE_ORDERS</code></td>
+</tr>
+<tr class="even">
+<td><strong>Gruppenadministrator</strong></td>
+<td>Benutzer-Set + <code>VIEW_USERS</code>, <code>CREATE_USERS</code>,
+<code>EDIT_USERS</code>, <code>DELETE_USERS</code>,
+<code>EDIT_MEALS</code>, <code>DELETE_MEALS</code>,
+<code>MANAGE_TEMPLATES</code>, <code>VIEW_ORDERS</code>,
+<code>EXPORT_DATA</code>, <code>IMPORT_DATA</code>,
+<code>VIEW_STATISTICS</code></td>
+</tr>
+<tr class="odd">
+<td><strong>Superuser</strong></td>
+<td><strong>alle</strong> Permission-Keys</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Beachte: <code>MANAGE_TRASH</code>, <code>VIEW_AUDIT_LOG</code>,
+<code>SYSTEM_SETTINGS</code>, <code>MANAGE_PERMISSIONS</code>,
+<code>CREATE_/EDIT_/DELETE_GROUPS</code> sind standardmäßig
+<strong>nur</strong> beim Superuser. Deshalb sehen z. B. den Menüpunkt
+<strong>Papierkorb</strong> oder das <strong>Protokoll</strong> per
+Default nur Superuser – es sei denn, eine <strong>eigene Rolle</strong>
+vergibt das jeweilige Recht.</p>
+</blockquote>
+<p>Wichtig zur Konsistenz: Die <code>Permission</code>-Union in
+<code>src/types/index.ts</code> und der <code>PERMISSION_CATALOG</code>
+in <code>src/lib/permissions.ts</code> müssen synchron bleiben.</p>
+<hr />
+<h2 id="8-settings-schlüssel">8. <code>settings</code>-Schlüssel</h2>
+<p>Die <code>settings</code>-Collection ist ein globaler
+Key-Value-Speicher (lesen: alle Angemeldeten; schreiben: nur Superuser).
+Bekannte Schlüssel:</p>
+<table>
+<thead>
+<tr class="header">
+<th><code>key</code></th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>app_defaults</code></td>
+<td>Globale Standardwerte für <strong>neue Gruppen</strong> (Sprache,
+Zeitzone, Währung, Bestellschluss, Export-Standard). Pflege:
+<strong>Einstellungen → Gruppen-Standards</strong>.</td>
+</tr>
+<tr class="even">
+<td><code>maintenance</code></td>
+<td>Wartungsmodus (<code>active</code>, <code>start_time</code>,
+<code>duration</code>, <code>message</code>). Pflege: <strong>Nutzer →
+Wartungssteuerung</strong> (nur Superuser). Aktiv → Banner für
+alle.</td>
+</tr>
+<tr class="odd">
+<td><code>statistics_enabled</code></td>
+<td>Systemweiter Schalter für den Menüpunkt
+<strong>Statistiken</strong>. Pflege: <strong>Einstellungen →
+System</strong> (nur Superuser).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9-entwickler-workflow">9. Entwickler-Workflow</h2>
+<p><strong>Voraussetzungen:</strong> Node.js ≥ 20, PocketBase ≥ 0.22
+(getestet 0.26.8).</p>
+<pre class="bash"><code>npm install            # Abhängigkeiten
+npm run dev            # Vite-Dev-Server (http://localhost:5173)
+# Parallel PocketBase starten:
+./pocketbase serve     # http://127.0.0.1:8090  (+ Admin-UI unter /_/ )
+
+npm run build          # Typecheck (tsc -b) + Produktions-Build nach dist/
+npm run preview        # Produktions-Build lokal ansehen
+npm run lint           # ESLint
+npm test               # vitest (Unit-Tests)
+npm run test:coverage  # Coverage-Report</code></pre>
+<p><strong>Qualitätsstand (Referenz):</strong> <code>tsc</code>,
+<code>vite build</code> und die Test-Suite laufen sauber durch. ESLint
+meldet aktuell einige Hinweise der <strong>strengen React-19-
+Regeln</strong> (<code>react-hooks/set-state-in-effect</code> beim
+„Laden-beim-Mounten"-Muster,
+<code>react-refresh/only-export-components</code> in Context-Dateien) –
+<strong>keine</strong> Logik-, Laufzeit- oder Compile-Fehler.</p>
+<p><strong>Knowledge Graph (graphify):</strong> Das Projekt pflegt einen
+Wissensgraphen unter <code>graphify-out/</code>. Für Codebasis-Fragen
+zuerst <code>graphify query "&lt;Frage&gt;"</code> nutzen; nach
+Codeänderungen <code>graphify update .</code> ausführen (siehe
+<code>CLAUDE.md</code>).</p>
+<hr />
+<h2 id="10-betrieb-superuser-backups-wartung">10. Betrieb: Superuser,
+Backups, Wartung</h2>
+<h3 id="ersten-superuser-anlegen">Ersten Superuser anlegen</h3>
+<p>Der erste App-Nutzer muss über die
+<strong>PocketBase-Admin-UI</strong> angelegt werden (die App erlaubt
+das Anlegen nur Superusern):</p>
+<p><strong>Admin-UI → Collections → <code>users</code> → „+ New
+record"</strong> mit <code>is_admin = true</code> und
+<code>is_superuser = true</code>.</p>
+<blockquote>
+<p>Der <strong>PocketBase-Superadmin</strong> (Login des Admin-Panels
+<code>/_/</code>) ist etwas anderes als der
+App-<strong>Superuser</strong> (ein <code>users</code>-Datensatz mit
+<code>is_superuser = true</code>).</p>
+</blockquote>
+<h3 id="erste-gruppe--zuweisung">Erste Gruppe &amp; Zuweisung</h3>
+<ol type="1">
+<li>Als Superuser in der App <strong>Gruppen → „+ Neue
+Gruppe"</strong>.</li>
+<li><strong>Nutzer</strong> anlegen und der Gruppe zuweisen (setzt
+<code>group_id</code>).</li>
+<li>Optional in <code>group_memberships</code> einen Eintrag mit
+<code>role = admin</code> für Gruppen-Admins pflegen.</li>
+</ol>
+<h3 id="backups">Backups</h3>
+<p>PocketBase legt alle Daten in <strong><code>pb_data/</code></strong>
+(SQLite + Uploads) ab.</p>
+<ul>
+<li><strong>Einfachstes Backup:</strong> <code>pb_data/</code> bei
+gestopptem Dienst kopieren, oder regelmäßig snapshotten.</li>
+<li><strong>Im laufenden Betrieb:</strong> PocketBase-Admin-UI →
+<strong>Settings → Backups</strong> (erzeugt konsistente ZIP-Backups;
+auch per Cron/API automatisierbar).</li>
+</ul>
+<h3 id="wartungsmodus">Wartungsmodus</h3>
+<p><strong>Nutzer → Wartungssteuerung</strong> (Superuser): Startzeit,
+Dauer und optionale Nachricht setzen und aktivieren → alle Nutzer sehen
+ein Wartungsbanner.</p>
+<hr />
+<h2 id="11-bekannte-stolperfallen--offene-punkte">11. Bekannte
+Stolperfallen &amp; offene Punkte</h2>
+<ul>
+<li><strong>Zwei Kopien von <code>setup_collections.js</code></strong>
+(<code>migrations/</code> = kanonisch, neuer;
+<code>pb_migrations/</code> = älter). Für Deployments die kanonische
+Version verwenden und die Kopie angleichen (siehe <a
+href="#4-prüfergebnis-erstellt-setup_collectionsjs-das-schema-korrekt">Abschnitt
+4</a>).</li>
+<li><strong><code>ensureCollection</code> ergänzt keine neuen
+Felder</strong> auf bereits existierenden Collections (außer
+<code>groups</code>). Neue Felder für Bestands-DBs brauchen einen
+<code>ensureField</code>-Backstop oder einmaligen
+Admin-UI-Eingriff.</li>
+<li><strong>Feldweise Schreibrechte</strong> bei <code>users</code>
+werden nur in der App-Logik, nicht per DB-Regel durchgesetzt.</li>
+<li><strong>Statistik-Button im Dashboard</strong>: navigiert nach
+<code>stats</code>, auch wenn <code>statistics_enabled = false</code> –
+dann rendert die Zielansicht nichts (leer). Kein Datenrisiko; ggf. den
+Button an das Feature-Flag koppeln.</li>
+<li><strong>Legacy-Collection <code>meals_data</code></strong>
+(Einzel-Dokument-Architektur) existiert nur noch für Altmigrationen; für
+die Migration siehe <a
+href="./migrations-readme.html"><code>migrations/README.md</code>
+§7.2</a>.</li>
+</ul>
+</article>
+    <footer class="doc-footer">
+      <p>Essensplaner-Dokumentation · automatisch aus den Markdown-Quellen in <code>doc/</code> erzeugt.</p>
+    </footer>
+  </main>
+</div>
+<script src="./assets/app.js"></script>
+</body>
+</html>
