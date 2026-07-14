@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Übersicht · Essensplaner-Dokumentation</title>
+<meta name="description" content="Dokumentation für den Essensplaner: Nutzung, Betrieb und Installation.">
+<link rel="stylesheet" href="./assets/style.css">
+<script>(function(){try{var t=localStorage.getItem('docs-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<button class="menu-toggle" type="button" aria-label="Menü umschalten">☰</button>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="./index.html">
+      <span class="brand__logo" aria-hidden="true">🍽</span>
+      <span class="brand__text">Essensplaner<small>Dokumentation</small></span>
+    </a>
+    <nav class="nav" aria-label="Dokumente">
+        <a class="nav__link nav__link--active" href="./index.html"><span class="nav__icon" aria-hidden="true">🏠</span>Übersicht</a>
+        <a class="nav__link" href="./benutzerhandbuch.html"><span class="nav__icon" aria-hidden="true">👤</span>Benutzerhandbuch</a>
+        <a class="nav__link" href="./handbuch-admin-entwickler.html"><span class="nav__icon" aria-hidden="true">🛠</span>Admin & Entwickler</a>
+        <a class="nav__link" href="./quickstart-server.html"><span class="nav__icon" aria-hidden="true">🚀</span>Server-Quickstart</a>
+        <a class="nav__link" href="./migrations-readme.html"><span class="nav__icon" aria-hidden="true">🗄</span>DB-Schema-Referenz</a>
+    </nav>
+    <div class="sidebar__spacer"></div>
+    <div class="sidebar__footer">
+      <button id="theme-toggle" class="theme-btn" type="button">🌗 Design wechseln</button>
+      <a class="side-link" href="../">← Zur App</a>
+      <a class="side-link" href="https://github.com/NachtsternBuild/essen-seite" target="_blank" rel="noopener">GitHub-Repository ↗</a>
+    </div>
+  </aside>
+  <main class="content">
+<section class="hero">
+  <div class="hero__icon" aria-hidden="true">🍽</div>
+  <h1 class="hero__title">Essensplaner – Dokumentation</h1>
+  <p class="hero__sub">Alles zur Nutzung, zum Betrieb und zur Installation – an einem Ort.</p>
+</section>
+
+<section class="cards">
+  <a class="doc-card" href="./benutzerhandbuch.html">
+    <div class="doc-card__icon" aria-hidden="true">👤</div>
+    <h3>Benutzerhandbuch</h3>
+    <p>Für alle Nutzer: Menüs, Bestellen, Bestellschluss, Rollen &amp; Rechte, FAQ.</p>
+    <span class="doc-card__cta">Öffnen →</span>
+  </a>
+  <a class="doc-card" href="./handbuch-admin-entwickler.html">
+    <div class="doc-card__icon" aria-hidden="true">🛠</div>
+    <h3>Admin &amp; Entwickler</h3>
+    <p>Architektur, Datenbank-Setup, vollständiges Schema, Rechtemodell, Betrieb.</p>
+    <span class="doc-card__cta">Öffnen →</span>
+  </a>
+  <a class="doc-card" href="./quickstart-server.html">
+    <div class="doc-card__icon" aria-hidden="true">🚀</div>
+    <h3>Server-Quickstart</h3>
+    <p>Schritt-für-Schritt-Deployment auf Ubuntu Server 26.04 LTS mit nginx &amp; HTTPS.</p>
+    <span class="doc-card__cta">Öffnen →</span>
+  </a>
+  <a class="doc-card" href="./migrations-readme.html">
+    <div class="doc-card__icon" aria-hidden="true">🗄</div>
+    <h3>DB-Schema-Referenz</h3>
+    <p>PocketBase-Setup, alle Collections, Felder und API-Regeln im Detail.</p>
+    <span class="doc-card__cta">Öffnen →</span>
+  </a>
+</section>
+    <footer class="doc-footer">
+      <p>Essensplaner-Dokumentation · automatisch aus den Markdown-Quellen in <code>doc/</code> erzeugt.</p>
+    </footer>
+  </main>
+</div>
+<script src="./assets/app.js"></script>
+</body>
+</html>

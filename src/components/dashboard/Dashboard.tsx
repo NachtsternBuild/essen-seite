@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { StatCard } from '../shared/StatCard';
 import { EmptyState } from '../shared/EmptyState';
 import { summarizeOrdersByUser } from '../../lib/statistics';
-import { formatPrice } from '../../lib/utils';
+import { formatPrice, initials } from '../../lib/utils';
 import { DAYS_OF_WEEK } from '../../lib/pocketbase';
 import type { AuthUser, Group, MealPlan, OrdersByUser, ViewType } from '../../types';
 
@@ -57,44 +57,67 @@ function greeting(): string {
 }
 
 export function Dashboard(props: DashboardProps) {
+  const { isAdmin, isSuperuser } = props;
+
+  return (
+    <div className="dashboard">
+      <HeroCard {...props} />
+
+      {/* ── Weekly summaries (everyone) ── */}
+      <WeekSummary {...props} />
+      {isAdmin && !isSuperuser && <GroupSummary {...props} />}
+      {isSuperuser && <SystemSummary {...props} />}
+
+      {/* ── Tool management (admins & superuser only) ── */}
+      {isAdmin && <ManagementPanel {...props} />}
+    </div>
+  );
+}
+
+// ── Hero (shown to everyone) ─────────────────────────────────────────────────────
+
+function HeroCard(props: DashboardProps) {
   const { currentUser, isSuperuser, isAdmin, activeGroup } = props;
   const dateStr = new Date().toLocaleDateString('de-DE', {
     weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
   });
   const roleLabel = isSuperuser ? 'Superuser' : isAdmin ? 'Administrator' : 'Benutzer';
+  const firstName = currentUser.name.split(' ')[0];
 
   return (
-    <div className="dashboard">
-      <header className="dashboard__hero">
+    <header className="dashboard__hero">
+      <div className="dashboard__hero-main">
+        <div className="dashboard__hero-avatar" aria-hidden="true">
+          {initials(currentUser.name)}
+        </div>
         <div className="dashboard__hero-text">
-          <div className="dashboard__hero-greeting">
-            {greeting()}, {currentUser.name.split(' ')[0]}!
-          </div>
-          <div className="dashboard__hero-date">{dateStr}</div>
+          <p className="dashboard__hero-eyebrow">{dateStr}</p>
+          <h2 className="dashboard__hero-greeting">
+            {greeting()}, {firstName}!
+          </h2>
+          <p className="dashboard__hero-sub">
+            Schön, dass du wieder da bist – hier ist dein Überblick auf einen Blick.
+          </p>
         </div>
-        <div className="dashboard__hero-badges">
-          <span className="dashboard__hero-badge">{roleLabel}</span>
-          {activeGroup && (
-            <span
-              className="dashboard__hero-badge dashboard__hero-badge--group"
-              style={{ '--group-color': activeGroup.color } as React.CSSProperties}
-            >
-              {activeGroup.name}
-            </span>
-          )}
-        </div>
-      </header>
-
-      <UserPanel {...props} />
-      {isAdmin && !isSuperuser && <AdminPanel {...props} />}
-      {isSuperuser && <SuperuserPanel {...props} />}
-    </div>
+      </div>
+      <div className="dashboard__hero-badges">
+        <span className="dashboard__hero-badge">{roleLabel}</span>
+        {activeGroup && (
+          <span
+            className="dashboard__hero-badge dashboard__hero-badge--group"
+            style={{ '--group-color': activeGroup.color } as React.CSSProperties}
+          >
+            {activeGroup.name}
+          </span>
+        )}
+      </div>
+    </header>
   );
 }
 
-// ── User panel (shown to everyone) ──────────────────────────────────────────────
+// ── Personal weekly summary (shown to everyone) ──────────────────────────────────
 
-function UserPanel(props: DashboardProps) {
+function WeekSummary(props: DashboardProps) {
   const { currentUser, activeGroup, onNavigate } = props;
   const focus = focusWeek(props);
   const myOrders = useMemo(
@@ -175,10 +198,10 @@ function UserPanel(props: DashboardProps) {
   );
 }
 
-// ── Admin panel ─────────────────────────────────────────────────────────────────
+// ── Group weekly summary (admins) ────────────────────────────────────────────────
 
-function AdminPanel(props: DashboardProps) {
-  const { activeGroup, onNavigate } = props;
+function GroupSummary(props: DashboardProps) {
+  const { activeGroup } = props;
   const focus = focusWeek(props);
   const summary = useMemo(() => summarizeOrdersByUser(focus.orders), [focus.orders]);
   if (!activeGroup) return null;
@@ -186,7 +209,7 @@ function AdminPanel(props: DashboardProps) {
   return (
     <section className="card">
       <div className="dashboard__panel-head">
-        <h3 className="card__title">🛠 Gruppenübersicht – {activeGroup.name}</h3>
+        <h3 className="card__title">📊 Gruppenwoche – {activeGroup.name}</h3>
         <span className="badge badge--muted">{focus.label}</span>
       </div>
       <div className="stat-grid">
@@ -200,18 +223,13 @@ function AdminPanel(props: DashboardProps) {
           hint={summary.topMeal?.name}
         />
       </div>
-      <div className="dashboard__actions">
-        <button className="btn btn--ghost btn--sm" onClick={() => onNavigate('users')}>Nutzer verwalten</button>
-        <button className="btn btn--ghost btn--sm" onClick={() => onNavigate('stats')}>Statistiken</button>
-        <button className="btn btn--ghost btn--sm" onClick={() => onNavigate('upcoming')}>Planung</button>
-      </div>
     </section>
   );
 }
 
-// ── Superuser panel ──────────────────────────────────────────────────────────────
+// ── System summary (superuser) ───────────────────────────────────────────────────
 
-function SuperuserPanel({ allGroups, allUsers, onNavigate }: DashboardProps) {
+function SystemSummary({ allGroups, allUsers }: DashboardProps) {
   const activeGroups = allGroups.filter(g => !g.archived).length;
   const archived = allGroups.length - activeGroups;
   const admins = allUsers.filter(u => u.is_admin && !u.is_superuser).length;
@@ -226,11 +244,70 @@ function SuperuserPanel({ allGroups, allUsers, onNavigate }: DashboardProps) {
         <StatCard icon="🛠" label="Administratoren" value={admins} />
         <StatCard icon="🛡" label="Superuser" value={superusers} />
       </div>
-      <div className="dashboard__actions">
-        <button className="btn btn--ghost btn--sm" onClick={() => onNavigate('groups')}>Gruppen verwalten</button>
-        <button className="btn btn--ghost btn--sm" onClick={() => onNavigate('stats')}>Statistiken & Vergleich</button>
-        <button className="btn btn--ghost btn--sm" onClick={() => onNavigate('users')}>Nutzer</button>
+    </section>
+  );
+}
+
+// ── Tool management (admins & superuser only) ────────────────────────────────────
+
+function ManagementPanel({ isSuperuser, onNavigate }: DashboardProps) {
+  return (
+    <section className="card dashboard__tools">
+      <div className="dashboard__panel-head">
+        <h3 className="card__title">🛠 Verwaltung &amp; Werkzeuge</h3>
+        <span className="badge badge--muted">{isSuperuser ? 'Superuser' : 'Administrator'}</span>
+      </div>
+      <div className="dashboard__tool-grid">
+        <ToolButton
+          icon="👥"
+          label="Nutzer"
+          desc="Konten & Rollen verwalten"
+          onClick={() => onNavigate('users')}
+        />
+        {isSuperuser && (
+          <ToolButton
+            icon="🏢"
+            label="Gruppen"
+            desc="Gruppen & Verknüpfungen"
+            onClick={() => onNavigate('groups')}
+          />
+        )}
+        <ToolButton
+          icon="📅"
+          label="Planung"
+          desc="Wochenmenü pflegen"
+          onClick={() => onNavigate('upcoming')}
+        />
+        <ToolButton
+          icon="📈"
+          label="Statistiken"
+          desc="Auswertungen & Vergleich"
+          onClick={() => onNavigate('stats')}
+        />
       </div>
     </section>
+  );
+}
+
+function ToolButton({
+  icon,
+  label,
+  desc,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  desc: string;
+  onClick: () => void;
+}) {
+  return (
+    <button className="dashboard__tool" onClick={onClick}>
+      <span className="dashboard__tool-icon" aria-hidden="true">{icon}</span>
+      <span className="dashboard__tool-text">
+        <span className="dashboard__tool-label">{label}</span>
+        <span className="dashboard__tool-desc">{desc}</span>
+      </span>
+      <span className="dashboard__tool-arrow" aria-hidden="true">→</span>
+    </button>
   );
 }
