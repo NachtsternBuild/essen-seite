@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { ClipboardList } from 'lucide-react';
 import { MealCard } from './MealCard';
 import { OrderSummary } from './OrderSummary';
 import { EmptyState } from './shared/EmptyState';
@@ -51,7 +52,7 @@ export const WeekView = memo(function WeekView({
     <div className="week-view">
       {!hasMeals && !currentUser?.is_admin && (
         <EmptyState
-          icon="📋"
+          icon={<ClipboardList size={48} strokeWidth={1.5} />}
           message="Für diese Woche sind noch keine Menüs eingetragen."
         />
       )}

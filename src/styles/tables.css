@@ -12,7 +12,8 @@
   gap: 10px;
 }
 
-.order-summary__title { font-size: 1.15rem; font-weight: 700; }
+.order-summary__title { display: flex; align-items: center; gap: 8px; font-size: 1.15rem; font-weight: 700; }
+.order-summary__title svg { color: var(--accent); }
 .order-summary__exports { display: flex; gap: 6px; flex-wrap: wrap; }
 .order-summary__empty { color: var(--text-muted); font-style: italic; }
 

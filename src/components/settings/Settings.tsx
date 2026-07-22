@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
+import { Sun, Moon, Monitor } from 'lucide-react';
 import { useThemeContext } from '../../context/ThemeContext';
 import { ACCENT_PRESETS } from '../../lib/accent';
 import { usePermissions } from '../../context/PermissionContext';
@@ -20,10 +21,16 @@ interface SettingsProps {
 
 type Tab = 'appearance' | 'notifications' | 'groups' | 'log' | 'system';
 
-const THEME_LABELS: Record<ThemeMode, string> = {
-  light: '☀️ Hell',
-  dark: '🌙 Dunkel',
-  system: '💻 System',
+const THEME_ICONS: Record<ThemeMode, ReactNode> = {
+  light: <Sun size={16} />,
+  dark: <Moon size={16} />,
+  system: <Monitor size={16} />,
+};
+
+const THEME_TEXT: Record<ThemeMode, string> = {
+  light: 'Hell',
+  dark: 'Dunkel',
+  system: 'System',
 };
 
 export function Settings({
@@ -92,14 +99,14 @@ function AppearancePanel() {
       <div className="form-group">
         <label className="form-label">Theme</label>
         <div className="settings-theme-choices">
-          {(Object.keys(THEME_LABELS) as ThemeMode[]).map(mode => (
+          {(Object.keys(THEME_TEXT) as ThemeMode[]).map(mode => (
             <button
               key={mode}
               className={`settings-choice${theme === mode ? ' settings-choice--active' : ''}`}
               onClick={() => setTheme(mode)}
               aria-pressed={theme === mode}
             >
-              {THEME_LABELS[mode]}
+              {THEME_ICONS[mode]} {THEME_TEXT[mode]}
             </button>
           ))}
         </div>

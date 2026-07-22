@@ -1,4 +1,22 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type ReactNode } from 'react';
+import {
+  UtensilsCrossed,
+  LayoutDashboard,
+  Calendar,
+  CalendarDays,
+  Archive,
+  TrendingUp,
+  Users,
+  Building2,
+  Trash2,
+  Settings as SettingsIcon,
+  AlertTriangle,
+  Inbox,
+  ClipboardList,
+  ArrowUpRight,
+  History,
+  Pin,
+} from 'lucide-react';
 
 // ── Context & Hooks ─────────────────────────────────────────────────────────────
 import { useAuthentication } from './hooks/useAuthentication';
@@ -206,7 +224,7 @@ export default function App() {
       {/* ── Sidebar ── */}
       <aside className="sidebar" role="navigation" aria-label="Hauptnavigation">
         <div className="sidebar__brand">
-          <span className="sidebar__logo" aria-hidden="true">🍽</span>
+          <span className="sidebar__logo" aria-hidden="true"><UtensilsCrossed size={30} strokeWidth={1.75} /></span>
           <span className="sidebar__name">Essensplaner</span>
         </div>
 
@@ -217,32 +235,32 @@ export default function App() {
 
         <nav className="sidebar__nav">
           <NavItem
-            icon="📊"
+            icon={<LayoutDashboard size={19} />}
             label="Übersicht"
             active={view === 'dashboard'}
             onClick={() => setView('dashboard')}
           />
           <NavItem
-            icon="📅"
+            icon={<Calendar size={19} />}
             label="Planung"
             active={view === 'upcoming'}
             onClick={() => setView('upcoming')}
           />
           <NavItem
-            icon="🗓"
+            icon={<CalendarDays size={19} />}
             label="Aktuelle Woche"
             active={view === 'current'}
             onClick={() => setView('current')}
           />
           <NavItem
-            icon="📦"
+            icon={<Archive size={19} />}
             label="Archiv"
             active={view === 'archive'}
             onClick={() => setView('archive')}
           />
           {can('VIEW_STATISTICS') && statisticsEnabled && (
             <NavItem
-              icon="📈"
+              icon={<TrendingUp size={19} />}
               label="Statistiken"
               active={view === 'stats'}
               onClick={() => setView('stats')}
@@ -250,7 +268,7 @@ export default function App() {
           )}
           {isAdmin && (
             <NavItem
-              icon="👥"
+              icon={<Users size={19} />}
               label="Nutzer"
               active={view === 'users'}
               onClick={() => setView('users')}
@@ -258,7 +276,7 @@ export default function App() {
           )}
           {isSuperuser && (
             <NavItem
-              icon="🏢"
+              icon={<Building2 size={19} />}
               label="Gruppen"
               active={view === 'groups'}
               onClick={() => setView('groups')}
@@ -266,14 +284,14 @@ export default function App() {
           )}
           {can('MANAGE_TRASH') && (
             <NavItem
-              icon="🗑"
+              icon={<Trash2 size={19} />}
               label="Papierkorb"
               active={view === 'trash'}
               onClick={() => setView('trash')}
             />
           )}
           <NavItem
-            icon="⚙️"
+            icon={<SettingsIcon size={19} />}
             label="Einstellungen"
             active={view === 'settings'}
             onClick={() => setView('settings')}
@@ -307,7 +325,10 @@ export default function App() {
               {isLoadingMeals ? (
                 <><Spinner size="sm" /> Syncing…</>
               ) : (
-                <>{isOnline ? '● Online' : '○ Offline'}</>
+                <>
+                  <span className={`status-dot ${isOnline ? 'status-dot--active' : 'status-dot--inactive'}`} aria-hidden="true" />
+                  {isOnline ? 'Online' : 'Offline'}
+                </>
               )}
             </div>
             <button
@@ -328,7 +349,8 @@ export default function App() {
             className={`maintenance-banner${maintenanceInfo.isUrgent ? ' maintenance-banner--urgent' : ''}`}
             role="alert"
           >
-            <strong>⚠️ WARTUNGSARBEITEN:</strong> Beginn in ca.{' '}
+            <AlertTriangle size={18} />{' '}
+            <strong>WARTUNGSARBEITEN:</strong> Beginn in ca.{' '}
             {maintenanceInfo.hoursUntil} Stunden · Dauer ca. {maintenanceInfo.duration}
             {maintenanceInfo.message && ` · ${maintenanceInfo.message}`}
           </div>
@@ -355,7 +377,7 @@ export default function App() {
         {view === 'dashboard' && currentUser && (
           <>
             <div className="page-header">
-              <h2 className="page-title">📊 Übersicht</h2>
+              <h2 className="page-title"><LayoutDashboard size={26} /> Übersicht</h2>
             </div>
             <Dashboard
               currentUser={currentUser}
@@ -377,7 +399,7 @@ export default function App() {
         {view === 'stats' && statisticsEnabled && (
           <>
             <div className="page-header">
-              <h2 className="page-title">📈 Statistiken</h2>
+              <h2 className="page-title"><TrendingUp size={26} /> Statistiken</h2>
             </div>
             <Statistics
               groupId={groupId}
@@ -392,7 +414,7 @@ export default function App() {
         {view === 'trash' && can('MANAGE_TRASH') && (
           <>
             <div className="page-header">
-              <h2 className="page-title">🗑 Papierkorb</h2>
+              <h2 className="page-title"><Trash2 size={26} /> Papierkorb</h2>
             </div>
             <TrashPanel currentUser={currentUser} groupId={groupId} />
           </>
@@ -402,7 +424,7 @@ export default function App() {
         {view === 'settings' && (
           <>
             <div className="page-header">
-              <h2 className="page-title">⚙️ Einstellungen</h2>
+              <h2 className="page-title"><SettingsIcon size={26} /> Einstellungen</h2>
             </div>
             <Settings
               currentUser={currentUser}
@@ -417,7 +439,7 @@ export default function App() {
         {/* No group selected */}
         {!activeGroup && view !== 'groups' && view !== 'dashboard' && view !== 'stats' && view !== 'trash' && view !== 'settings' && (
           <EmptyState
-            icon="🏢"
+            icon={<Building2 size={48} strokeWidth={1.5} />}
             title="Keine Gruppe ausgewählt"
             message={
               isSuperuser
@@ -436,7 +458,7 @@ export default function App() {
         {view === 'upcoming' && activeGroup && (
           <>
             <div className="page-header">
-              <h2 className="page-title">📅 Planung – Nächste Woche</h2>
+              <h2 className="page-title"><Calendar size={26} /> Planung – Nächste Woche</h2>
               {isAdmin && (
                 <div className="page-header__actions">
                   {isSharedPlan && (
@@ -468,7 +490,7 @@ export default function App() {
                       className="btn btn--ghost"
                       onClick={() => openTemplatePicker('upcoming')}
                     >
-                      📋 Aus Vorlage
+                      <ClipboardList size={16} /> Aus Vorlage
                     </button>
                   )}
                   {!isSharedPlan && upcomingPlan && (
@@ -476,7 +498,7 @@ export default function App() {
                       className="btn btn--ghost"
                       onClick={() => publishTemplate(upcomingPlan)}
                     >
-                      ↗ Als Vorlage
+                      <ArrowUpRight size={16} /> Als Vorlage
                     </button>
                   )}
                   {upcomingPlan && (
@@ -484,7 +506,7 @@ export default function App() {
                       className="btn btn--ghost"
                       onClick={() => setHistoryPlanId(upcomingPlan.id)}
                     >
-                      🕓 Verlauf
+                      <History size={16} /> Verlauf
                     </button>
                   )}
                   {!isSharedPlan && upcomingPlan && (
@@ -507,7 +529,7 @@ export default function App() {
 
             {!upcomingPlan ? (
               <EmptyState
-                icon="📋"
+                icon={<ClipboardList size={48} strokeWidth={1.5} />}
                 message={
                   isSharedPlan
                     ? 'Die verlinkte Gruppe hat noch keinen Plan für nächste Woche.'
@@ -555,7 +577,7 @@ export default function App() {
         {view === 'current' && activeGroup && (
           <>
             <div className="page-header">
-              <h2 className="page-title">🗓 Aktuelle Woche</h2>
+              <h2 className="page-title"><CalendarDays size={26} /> Aktuelle Woche</h2>
               {isAdmin && (
                 <div className="page-header__actions">
                   {isSharedPlan && (
@@ -579,7 +601,7 @@ export default function App() {
                       className="btn btn--ghost"
                       onClick={() => openTemplatePicker('current')}
                     >
-                      📋 Aus Vorlage
+                      <ClipboardList size={16} /> Aus Vorlage
                     </button>
                   )}
                   {!isSharedPlan && currentPlan && (
@@ -587,7 +609,7 @@ export default function App() {
                       className="btn btn--ghost"
                       onClick={() => publishTemplate(currentPlan)}
                     >
-                      ↗ Als Vorlage
+                      <ArrowUpRight size={16} /> Als Vorlage
                     </button>
                   )}
                   {currentPlan && (
@@ -595,7 +617,7 @@ export default function App() {
                       className="btn btn--ghost"
                       onClick={() => setHistoryPlanId(currentPlan.id)}
                     >
-                      🕓 Verlauf
+                      <History size={16} /> Verlauf
                     </button>
                   )}
                   {!isSharedPlan && currentPlan && (
@@ -617,13 +639,13 @@ export default function App() {
             )}
 
             <div className="info-banner" role="note">
-              📌 Änderungen sind nur für zukünftige Tage oder heute vor{' '}
+              <Pin size={16} /> Änderungen sind nur für zukünftige Tage oder heute vor{' '}
               <strong>08:30 Uhr</strong> möglich.
             </div>
 
             {!currentPlan ? (
               <EmptyState
-                icon="📋"
+                icon={<ClipboardList size={48} strokeWidth={1.5} />}
                 message="Kein aktiver Wochenplan vorhanden."
                 action={
                   isAdmin && !isSharedPlan
@@ -664,11 +686,11 @@ export default function App() {
         {view === 'archive' && activeGroup && (
           <>
             <div className="page-header">
-              <h2 className="page-title">📦 Vorwoche (Archiv)</h2>
+              <h2 className="page-title"><Archive size={26} /> Vorwoche (Archiv)</h2>
             </div>
             {!previousPlan ? (
               <EmptyState
-                icon="📭"
+                icon={<Inbox size={48} strokeWidth={1.5} />}
                 message="Keine Daten im Archiv vorhanden."
               />
             ) : (
@@ -691,7 +713,7 @@ export default function App() {
         {view === 'users' && isAdmin && (
           <>
             <div className="page-header">
-              <h2 className="page-title">👥 Benutzerverwaltung</h2>
+              <h2 className="page-title"><Users size={26} /> Benutzerverwaltung</h2>
             </div>
 
             {isSuperuser && (
@@ -719,7 +741,7 @@ export default function App() {
         {view === 'groups' && isSuperuser && (
           <>
             <div className="page-header">
-              <h2 className="page-title">🏢 Gruppenverwaltung</h2>
+              <h2 className="page-title"><Building2 size={26} /> Gruppenverwaltung</h2>
             </div>
             <GroupManagement currentUser={currentUser} />
           </>
@@ -765,7 +787,7 @@ function NavItem({
   active,
   onClick,
 }: {
-  icon: string;
+  icon: ReactNode;
   label: string;
   active: boolean;
   onClick: () => void;

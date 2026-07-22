@@ -1,4 +1,20 @@
 import { useMemo } from 'react';
+import {
+  BarChart3,
+  Download,
+  Receipt,
+  Euro,
+  Users,
+  TrendingUp,
+  UtensilsCrossed,
+  Calendar,
+  Salad,
+  Leaf,
+  Carrot,
+  Beef,
+  AlertTriangle,
+  Building2,
+} from 'lucide-react';
 import { useStatistics } from '../../hooks/useStatistics';
 import { statisticsService } from '../../services/statisticsService';
 import { StatCard } from '../shared/StatCard';
@@ -65,7 +81,7 @@ export function Statistics({ groupId, groupName, isSuperuser, comparisonGroups }
   );
 
   if (!groupId) {
-    return <EmptyState icon="📊" message="Keine Gruppe ausgewählt." />;
+    return <EmptyState icon={<BarChart3 size={48} strokeWidth={1.5} />} message="Keine Gruppe ausgewählt." />;
   }
   if (isLoading) {
     return <div className="card"><Spinner /></div>;
@@ -73,7 +89,7 @@ export function Statistics({ groupId, groupName, isSuperuser, comparisonGroups }
   if (!stats || stats.totalOrders === 0) {
     return (
       <EmptyState
-        icon="📊"
+        icon={<BarChart3 size={48} strokeWidth={1.5} />}
         title="Noch keine Auswertung"
         message="Sobald Bestellungen vorliegen, erscheinen hier Statistiken."
       />
@@ -100,55 +116,55 @@ export function Statistics({ groupId, groupName, isSuperuser, comparisonGroups }
         </span>
         <div className="stats-page__actions">
           <button className="btn btn--ghost btn--sm" onClick={() => handleExport('csv')}>
-            ⬇ CSV
+            <Download size={15} /> CSV
           </button>
           <button className="btn btn--ghost btn--sm" onClick={() => handleExport('json')}>
-            ⬇ JSON
+            <Download size={15} /> JSON
           </button>
         </div>
       </div>
 
       {/* KPI row */}
       <div className="stat-grid">
-        <StatCard icon="🧾" label="Bestellungen" value={stats.totalOrders} accent />
-        <StatCard icon="💶" label="Umsatz" value={`${formatPrice(stats.totalRevenue)} €`} />
-        <StatCard icon="👥" label="Aktive Nutzer" value={stats.uniqueUsers} />
-        <StatCard icon="📈" label="Ø pro Bestellung" value={`${formatPrice(stats.averagePerOrder)} €`} />
+        <StatCard icon={<Receipt size={22} />} label="Bestellungen" value={stats.totalOrders} accent />
+        <StatCard icon={<Euro size={22} />} label="Umsatz" value={`${formatPrice(stats.totalRevenue)} €`} />
+        <StatCard icon={<Users size={22} />} label="Aktive Nutzer" value={stats.uniqueUsers} />
+        <StatCard icon={<TrendingUp size={22} />} label="Ø pro Bestellung" value={`${formatPrice(stats.averagePerOrder)} €`} />
       </div>
 
       <div className="stats-columns">
         <section className="card">
-          <h3 className="card__title">🍽 Beliebteste Menüs</h3>
+          <h3 className="card__title"><UtensilsCrossed size={18} /> Beliebteste Menüs</h3>
           <BarList items={mealItems} />
         </section>
 
         <section className="card">
-          <h3 className="card__title">📅 Bestellungen pro Tag</h3>
+          <h3 className="card__title"><Calendar size={18} /> Bestellungen pro Tag</h3>
           <BarList items={dayItems} />
         </section>
 
         <section className="card">
-          <h3 className="card__title">🥗 Ernährung</h3>
+          <h3 className="card__title"><Salad size={18} /> Ernährung</h3>
           <div className="diet-row">
-            <StatCard icon="🌱" label="Vegetarisch" value={stats.diet.vegetarian} hint={`${pct(stats.diet.vegetarian)} %`} />
-            <StatCard icon="🌿" label="Vegan" value={stats.diet.vegan} hint={`${pct(stats.diet.vegan)} %`} />
-            <StatCard icon="🍖" label="Sonstige" value={stats.diet.other} hint={`${pct(stats.diet.other)} %`} />
+            <StatCard icon={<Carrot size={22} />} label="Vegetarisch" value={stats.diet.vegetarian} hint={`${pct(stats.diet.vegetarian)} %`} />
+            <StatCard icon={<Leaf size={22} />} label="Vegan" value={stats.diet.vegan} hint={`${pct(stats.diet.vegan)} %`} />
+            <StatCard icon={<Beef size={22} />} label="Sonstige" value={stats.diet.other} hint={`${pct(stats.diet.other)} %`} />
           </div>
         </section>
 
         <section className="card">
-          <h3 className="card__title">⚠️ Allergene</h3>
+          <h3 className="card__title"><AlertTriangle size={18} /> Allergene</h3>
           <BarList items={allergenItems} emptyMessage="Keine Allergene erfasst." />
         </section>
 
         <section className="card stats-columns__wide">
-          <h3 className="card__title">📈 Verlauf (Bestellungen pro Woche)</h3>
+          <h3 className="card__title"><TrendingUp size={18} /> Verlauf (Bestellungen pro Woche)</h3>
           <BarList items={trendItems} />
         </section>
 
         {isSuperuser && comparisonItems.length > 0 && (
           <section className="card stats-columns__wide">
-            <h3 className="card__title">🏢 Gruppenvergleich</h3>
+            <h3 className="card__title"><Building2 size={18} /> Gruppenvergleich</h3>
             <BarList items={comparisonItems} />
           </section>
         )}

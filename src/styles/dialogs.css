@@ -48,13 +48,16 @@
 }
 
 .modal__title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text);
 }
+.modal__title svg { flex-shrink: 0; color: var(--accent); }
 
 .modal__close {
-  font-size: 1.1rem;
   color: var(--text-muted);
 }
 

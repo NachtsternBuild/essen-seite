@@ -211,7 +211,8 @@ select.form-input {
 .custom-select__placeholder { color: var(--text-muted); }
 
 .custom-select__chevron {
-  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
   color: var(--text-muted);
   flex-shrink: 0;
 }
@@ -257,8 +258,9 @@ select.form-input {
 .custom-select__option--active:hover { background: var(--accent-light); }
 
 .custom-select__check {
+  display: flex;
+  align-items: center;
   margin-left: auto;
-  font-size: 0.8rem;
   color: var(--accent);
   flex-shrink: 0;
 }
@@ -314,7 +316,7 @@ select.form-input {
 }
 
 .login-header { text-align: center; margin-bottom: 28px; }
-.login-logo   { font-size: 3rem; display: block; margin-bottom: 10px; }
+.login-logo   { display: flex; justify-content: center; color: var(--accent); margin-bottom: 10px; }
 .login-title  { font-size: 1.9rem; font-weight: 700; margin-bottom: 4px; }
 .login-subtitle { color: var(--text-muted); font-size: 1.1rem; }
 
@@ -367,7 +369,8 @@ select.form-input {
 }
 
 .group-selector__chevron {
-  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
   opacity: 0.5;
   flex-shrink: 0;
 }
@@ -414,8 +417,9 @@ select.form-input {
 }
 
 .group-selector__check {
+  display: flex;
+  align-items: center;
   margin-left: auto;
-  font-size: 0.8rem;
   color: var(--sidebar-active);
 }
 
@@ -593,7 +597,8 @@ select.form-input {
   margin-bottom: 14px;
 }
 
-.order-form__title { font-weight: 700; font-size: 1.15rem; }
+.order-form__title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.15rem; }
+.order-form__title svg { color: var(--accent); }
 .order-form__user  { color: var(--text-muted); font-size: 1rem; }
 
 .order-form__controls {
@@ -616,6 +621,9 @@ select.form-input {
 }
 
 .order-form__allergens {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.85rem;
   color: #b45309;
   font-family: var(--font-secondary);

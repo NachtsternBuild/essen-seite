@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { ShoppingCart, Leaf, Carrot, AlertTriangle } from 'lucide-react';
 import type { AuthUser, DayMeals, DayOfWeek, MealItem } from '../types';
 import { ALLERGENS } from '../types';
 import { isLocked } from '../lib/utils';
@@ -59,7 +60,7 @@ export function OrderForm({
       const price = typeof m.price === 'number'
         ? m.price.toFixed(2).replace('.', ',')
         : m.price;
-      const dietLabel = m.vegan ? ' 🌱 Vegan' : m.vegetarian ? ' 🥦 Vegetarisch' : '';
+      const dietLabel = m.vegan ? ' · Vegan' : m.vegetarian ? ' · Vegetarisch' : '';
       return {
         value: m.number,
         label: `#${m.number} – ${m.name}${dietLabel}`,
@@ -69,10 +70,10 @@ export function OrderForm({
             <span className="meal-option__name">{m.name}</span>
             <span className="meal-option__price">{price} €</span>
             {m.vegan && (
-              <span className="diet-badge diet-badge--vegan">🌱 Vegan</span>
+              <span className="diet-badge diet-badge--vegan"><Leaf size={12} /> Vegan</span>
             )}
             {!m.vegan && m.vegetarian && (
-              <span className="diet-badge diet-badge--veg">🥦 Vegetarisch</span>
+              <span className="diet-badge diet-badge--veg"><Carrot size={12} /> Vegetarisch</span>
             )}
           </div>
         ),
@@ -83,7 +84,7 @@ export function OrderForm({
   return (
     <div className="order-form">
       <div className="order-form__header">
-        <h3 className="order-form__title">🛒 Essen bestellen</h3>
+        <h3 className="order-form__title"><ShoppingCart size={19} /> Essen bestellen</h3>
         <span className="order-form__user">
           für <strong>{currentUser.name}</strong>
         </span>
@@ -120,12 +121,12 @@ export function OrderForm({
         <div className="order-form__meal-info">
           {(selectedMeal.vegan || selectedMeal.vegetarian) && (
             <span className={`diet-badge${selectedMeal.vegan ? ' diet-badge--vegan' : ' diet-badge--veg'}`}>
-              {selectedMeal.vegan ? '🌱 Vegan' : '🥦 Vegetarisch'}
+              {selectedMeal.vegan ? <><Leaf size={12} /> Vegan</> : <><Carrot size={12} /> Vegetarisch</>}
             </span>
           )}
           {selectedMeal.allergens && selectedMeal.allergens.length > 0 && (
             <span className="order-form__allergens">
-              ⚠️ Enthält: {selectedMeal.allergens.map(a => `${a} (${ALLERGENS[a] ?? a})`).join(', ')}
+              <AlertTriangle size={14} /> Enthält: {selectedMeal.allergens.map(a => `${a} (${ALLERGENS[a] ?? a})`).join(', ')}
             </span>
           )}
         </div>

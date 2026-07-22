@@ -1,3 +1,4 @@
+import { Lock, ClipboardList } from 'lucide-react';
 import { useAuditLog } from '../../hooks/useAuditLog';
 import { Spinner } from '../shared/Spinner';
 import { EmptyState } from '../shared/EmptyState';
@@ -28,11 +29,11 @@ export function AuditLogPanel({ enabled }: { enabled: boolean }) {
   const { entries, isLoading } = useAuditLog(enabled);
 
   if (!enabled) {
-    return <EmptyState icon="🔒" message="Keine Berechtigung zum Einsehen des Protokolls." />;
+    return <EmptyState icon={<Lock size={48} strokeWidth={1.5} />} message="Keine Berechtigung zum Einsehen des Protokolls." />;
   }
   if (isLoading) return <Spinner />;
   if (entries.length === 0) {
-    return <EmptyState icon="📋" message="Noch keine Protokolleinträge." />;
+    return <EmptyState icon={<ClipboardList size={48} strokeWidth={1.5} />} message="Noch keine Protokolleinträge." />;
   }
 
   return (

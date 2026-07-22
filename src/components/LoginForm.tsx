@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { UtensilsCrossed } from 'lucide-react';
 import { loginSchema } from '../lib/validation';
 import { Spinner } from './shared/Spinner';
 
@@ -31,7 +32,7 @@ export function LoginForm({ onLogin, isLoading }: LoginFormProps) {
     <div className="login-wrapper">
       <div className="login-card">
         <div className="login-header">
-          <div className="login-logo" aria-hidden="true">🍽</div>
+          <div className="login-logo" aria-hidden="true"><UtensilsCrossed size={36} strokeWidth={1.75} /></div>
           <h1 className="login-title">Essensplaner</h1>
           <p className="login-subtitle">Bitte melde dich an</p>
         </div>

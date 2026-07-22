@@ -1,4 +1,5 @@
 import { memo, useState } from 'react';
+import { Lock, X, Leaf, Carrot, ChevronUp, ChevronDown } from 'lucide-react';
 import { isLocked } from '../lib/utils';
 import { AddMealForm } from './AddMealForm';
 import type { MealItem, AuthUser, OrdersByUser } from '../types';
@@ -57,7 +58,7 @@ export const MealCard = memo(function MealCard({
           {day}
           {dayLocked && !isArchive && (
             <span className="meal-card__lock" title="Bestellschluss überschritten">
-              🔒
+              <Lock size={14} />
             </span>
           )}
         </h3>
@@ -121,7 +122,7 @@ export const MealCard = memo(function MealCard({
                     title="Bestellung entfernen"
                     aria-label={`Bestellung von ${person} für ${day} entfernen`}
                   >
-                    ✕
+                    <X size={14} />
                   </button>
                 )}
                 <span className="order-row__person">
@@ -191,11 +192,15 @@ function MenuItemRow({
               className={`menu-item__diet${meal.vegan ? ' menu-item__diet--vegan' : ' menu-item__diet--veg'}`}
               title={meal.vegan ? 'Vegan' : 'Vegetarisch'}
             >
-              {meal.vegan ? '🌱' : '🥦'}
+              {meal.vegan ? <Leaf size={13} /> : <Carrot size={13} />}
             </span>
           )}
           <span className="menu-item__price">{price} €</span>
-          {hasDetails && <span className="menu-item__chevron" aria-hidden="true">{open ? '▲' : '▼'}</span>}
+          {hasDetails && (
+            <span className="menu-item__chevron" aria-hidden="true">
+              {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+            </span>
+          )}
         </button>
         {canRemove && (
           <button
@@ -204,7 +209,7 @@ function MenuItemRow({
             title="Menü entfernen"
             aria-label={`Menü #${meal.number} entfernen`}
           >
-            ✕
+            <X size={14} />
           </button>
         )}
       </div>

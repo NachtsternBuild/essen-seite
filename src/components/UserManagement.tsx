@@ -1,4 +1,5 @@
 import { useState, memo } from 'react';
+import { Users } from 'lucide-react';
 import { UserRow } from './UserRow';
 import { Spinner } from './shared/Spinner';
 import { Modal } from './shared/Modal';
@@ -99,7 +100,7 @@ export const UserManagement = memo(function UserManagement({
       <div className="card">
         {/* ── Card header ── */}
         <div className="user-mgmt__header">
-          <h3 className="card__title">👥 Benutzerverwaltung</h3>
+          <h3 className="card__title"><Users size={18} /> Benutzerverwaltung</h3>
           {canCreate && (
             <button className="btn btn--success" onClick={openDialog}>
               + Nutzer anlegen

@@ -1,10 +1,12 @@
+import type { ReactNode } from 'react';
+import { Sun, Moon, Monitor } from 'lucide-react';
 import { useThemeContext } from '../../context/ThemeContext';
 import type { ThemeMode } from '../../types';
 
-const LABELS: Record<ThemeMode, string> = {
-  light: '☀️',
-  dark: '🌙',
-  system: '💻',
+const ICONS: Record<ThemeMode, ReactNode> = {
+  light: <Sun size={18} />,
+  dark: <Moon size={18} />,
+  system: <Monitor size={18} />,
 };
 
 const NEXT: Record<ThemeMode, ThemeMode> = {
@@ -23,7 +25,7 @@ export function ThemeToggle() {
       title={`Theme: ${theme} (klicken zum Wechseln)`}
       aria-label={`Aktuelles Theme: ${theme}`}
     >
-      {LABELS[theme]}
+      {ICONS[theme]}
     </button>
   );
 }

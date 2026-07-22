@@ -11,6 +11,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
   padding: 14px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -18,16 +19,43 @@
   box-shadow: var(--shadow-sm);
 }
 .stat-card--accent { border-color: var(--accent); }
-.stat-card__icon { font-size: 1.6rem; line-height: 1; }
+.stat-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: .85;
+}
+.stat-card__body { min-width: 0; flex: 1; }
 .stat-card__value {
   font-family: var(--font-secondary, inherit);
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text);
   line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.stat-card__label { font-size: .82rem; color: var(--text-muted); }
-.stat-card__hint { font-size: .72rem; color: var(--text-muted); margin-top: 2px; }
+.stat-card__label {
+  font-size: .82rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stat-card__hint {
+  font-size: .72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* Bar list (dependency-free horizontal bars) */
 .bar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -79,7 +107,9 @@
   align-items: start;
 }
 .stats-columns__wide { grid-column: 1 / -1; }
-.diet-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.diet-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.diet-row .stat-card { padding: 10px 14px; }
+.diet-row .stat-card__value { font-size: 1.15rem; }
 
 /* Dashboard */
 .dashboard { display: flex; flex-direction: column; gap: 16px; }
@@ -107,6 +137,7 @@
   flex-shrink: 0;
   width: 64px;
   height: 64px;
+  aspect-ratio: 1;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -177,12 +208,19 @@
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
-.dashboard__tool-icon { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+.dashboard__tool-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--accent);
+}
 .dashboard__tool-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .dashboard__tool-label { font-weight: 700; font-size: .95rem; color: var(--text); }
 .dashboard__tool-desc { font-size: .78rem; color: var(--text-muted); }
 .dashboard__tool-arrow {
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
   color: var(--text-muted);
   flex-shrink: 0;
   transition: transform .15s, color .15s;
@@ -190,7 +228,6 @@
 .dashboard__tool:hover .dashboard__tool-arrow { color: var(--accent); transform: translateX(2px); }
 
 @media (max-width: 520px) {
-  .diet-row { grid-template-columns: 1fr; }
   .bar-list__row { grid-template-columns: minmax(70px, 45%) 1fr auto; }
   .dashboard__hero { padding: 24px 20px; }
   .dashboard__hero-greeting { font-size: 1.6rem; }

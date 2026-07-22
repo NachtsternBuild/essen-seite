@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react';
+import { Wallet, FileText, FileSpreadsheet, FileDown, Save, ChefHat } from 'lucide-react';
 import type { AuthUser, OrdersByUser } from '../types';
 import {
   exportTXT,
@@ -82,13 +83,13 @@ export const OrderSummary = memo(function OrderSummary({
   return (
     <div className="order-summary card">
       <div className="order-summary__header">
-        <h3 className="order-summary__title">💰 Abrechnung</h3>
+        <h3 className="order-summary__title"><Wallet size={18} /> Abrechnung</h3>
         <div className="order-summary__exports">
-          <button className="btn btn--ghost btn--sm" onClick={() => handleExport('txt')} title="TXT exportieren">📄 TXT</button>
-          <button className="btn btn--ghost btn--sm" onClick={() => handleExport('csv')} title="CSV exportieren">📊 CSV</button>
-          <button className="btn btn--danger btn--sm" onClick={() => handleExport('pdf')} title="PDF exportieren">📋 PDF</button>
-          <button className="btn btn--ghost btn--sm" onClick={() => handleExport('json')} title="JSON-Backup">💾 JSON</button>
-          <button className="btn btn--ghost btn--sm" onClick={() => handleExport('kitchen')} title="Küchenzettel">🍳 Küche</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => handleExport('txt')} title="TXT exportieren"><FileText size={15} /> TXT</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => handleExport('csv')} title="CSV exportieren"><FileSpreadsheet size={15} /> CSV</button>
+          <button className="btn btn--danger btn--sm" onClick={() => handleExport('pdf')} title="PDF exportieren"><FileDown size={15} /> PDF</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => handleExport('json')} title="JSON-Backup"><Save size={15} /> JSON</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => handleExport('kitchen')} title="Küchenzettel"><ChefHat size={15} /> Küche</button>
         </div>
       </div>
 

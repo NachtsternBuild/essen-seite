@@ -1,11 +1,12 @@
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { useToastContext } from '../context/ToastContext';
 import type { Toast } from '../types';
 
-const ICONS: Record<Toast['type'], string> = {
-  success: '✓',
-  error: '✕',
-  warning: '⚠',
-  info: 'ℹ',
+const ICONS: Record<Toast['type'], React.ReactNode> = {
+  success: <CheckCircle2 size={18} />,
+  error: <XCircle size={18} />,
+  warning: <AlertTriangle size={18} />,
+  info: <Info size={18} />,
 };
 
 export function ToastContainer() {
@@ -36,7 +37,7 @@ export function ToastContainer() {
             onClick={() => removeToast(toast.id)}
             aria-label="Benachrichtigung schließen"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       ))}

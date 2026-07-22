@@ -1,15 +1,16 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { Bell, AlarmClock, CalendarDays, Pencil, Building2, Megaphone, Info, X } from 'lucide-react';
 import { useNotifications } from '../../hooks/useNotifications';
 import type { AuthUser, NotificationType } from '../../types';
 
-const TYPE_ICON: Record<NotificationType, string> = {
-  order_deadline: '⏰',
-  new_week: '🗓',
-  plan_changed: '✏️',
-  new_group: '🏢',
-  admin_message: '📣',
-  system: 'ℹ️',
+const TYPE_ICON: Record<NotificationType, ReactNode> = {
+  order_deadline: <AlarmClock size={16} />,
+  new_week: <CalendarDays size={16} />,
+  plan_changed: <Pencil size={16} />,
+  new_group: <Building2 size={16} />,
+  admin_message: <Megaphone size={16} />,
+  system: <Info size={16} />,
 };
 
 function formatTime(iso: string): string {
@@ -75,7 +76,7 @@ export function NotificationBell({ currentUser }: { currentUser: AuthUser | null
         aria-haspopup="true"
         aria-expanded={open}
       >
-        🔔
+        <Bell size={19} />
         {unreadCount > 0 && <span className="notif__badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
       </button>
 
@@ -106,7 +107,7 @@ export function NotificationBell({ currentUser }: { currentUser: AuthUser | null
                   className={`notif__item${n.read ? '' : ' notif__item--unread'}`}
                   onClick={() => !n.read && markRead(n.id)}
                 >
-                  <span className="notif__icon" aria-hidden="true">{TYPE_ICON[n.type] ?? 'ℹ️'}</span>
+                  <span className="notif__icon" aria-hidden="true">{TYPE_ICON[n.type] ?? <Info size={16} />}</span>
                   <span className="notif__body">
                     <span className="notif__title">{n.title}</span>
                     {n.message && <span className="notif__msg">{n.message}</span>}
@@ -117,7 +118,7 @@ export function NotificationBell({ currentUser }: { currentUser: AuthUser | null
                     onClick={e => { e.stopPropagation(); remove(n.id); }}
                     aria-label="Benachrichtigung entfernen"
                   >
-                    ×
+                    <X size={14} />
                   </button>
                 </li>
               ))}

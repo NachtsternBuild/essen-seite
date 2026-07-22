@@ -28,7 +28,7 @@
   flex-shrink: 0;
 }
 
-.sidebar__logo { font-size: 2.4rem; }
+.sidebar__logo { display: flex; align-items: center; color: var(--sidebar-active); }
 
 .sidebar__name {
   font-weight: 700;
@@ -81,9 +81,10 @@
 }
 
 .nav-item__icon {
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
-  text-align: center;
   flex-shrink: 0;
 }
 
@@ -183,10 +184,14 @@
 }
 
 .page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 1.7rem;
   font-weight: 700;
   color: var(--text);
 }
+.page-title svg { flex-shrink: 0; color: var(--accent); }
 
 .page-header__actions {
   display: flex;
@@ -196,6 +201,9 @@
 
 /* ─── Banners ────────────────────────────────────────────────────────────────── */
 .maintenance-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   border: 2px solid var(--color-warning);
   border-radius: var(--radius-lg);
   padding: 12px 18px;
@@ -203,6 +211,7 @@
   color: var(--text);
   font-size: 1.05rem;
 }
+.maintenance-banner svg { flex-shrink: 0; margin-top: 2px; color: var(--color-warning); }
 
 .maintenance-banner--urgent {
   border-color: var(--color-danger);
@@ -210,6 +219,9 @@
 }
 
 .info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   background: var(--accent-light);
   border: 1.5px solid var(--accent);
   border-radius: var(--radius);
@@ -218,6 +230,7 @@
   color: var(--text);
   margin-bottom: 16px;
 }
+.info-banner svg { flex-shrink: 0; margin-top: 2px; color: var(--accent); }
 
 .group-banner {
   background: var(--surface);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Building2, Upload } from 'lucide-react';
 import { useGroups } from '../../hooks/useGroups';
 import { useToastContext } from '../../context/ToastContext';
 import { GroupForm } from './GroupForm';
@@ -119,10 +120,10 @@ export function GroupManagement({ currentUser }: GroupManagementProps) {
   return (
     <div className="card">
       <div className="card-header">
-        <h3 className="card__title">🏢 Gruppenverwaltung</h3>
+        <h3 className="card__title"><Building2 size={18} /> Gruppenverwaltung</h3>
         <div className="card-header__actions">
           <button className="btn btn--ghost btn--sm" onClick={() => fileInputRef.current?.click()}>
-            ⬆ Importieren
+            <Upload size={15} /> Importieren
           </button>
           <button className="btn btn--success" onClick={() => setShowCreate(true)}>
             + Neue Gruppe
@@ -153,7 +154,7 @@ export function GroupManagement({ currentUser }: GroupManagementProps) {
 
       {visibleGroups.length === 0 ? (
         <EmptyState
-          icon="🏢"
+          icon={<Building2 size={48} strokeWidth={1.5} />}
           message="Noch keine Gruppen vorhanden."
           action={{ label: 'Erste Gruppe anlegen', onClick: () => setShowCreate(true) }}
         />

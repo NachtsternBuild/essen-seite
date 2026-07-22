@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { useTrash } from '../../hooks/useTrash';
 import { Spinner } from '../shared/Spinner';
 import { EmptyState } from '../shared/EmptyState';
@@ -29,7 +30,7 @@ export function TrashPanel({
   return (
     <div className="card">
       <div className="card-header">
-        <h3 className="card__title">🗑 Papierkorb</h3>
+        <h3 className="card__title"><Trash2 size={18} /> Papierkorb</h3>
         {entries.length > 0 && (
           <button className="btn btn--ghost btn--sm btn--danger-outline" onClick={() => setConfirmEmpty(true)}>
             Papierkorb leeren
@@ -38,7 +39,7 @@ export function TrashPanel({
       </div>
 
       {entries.length === 0 ? (
-        <EmptyState icon="🗑" message="Der Papierkorb ist leer." />
+        <EmptyState icon={<Trash2 size={48} strokeWidth={1.5} />} message="Der Papierkorb ist leer." />
       ) : (
         <div className="table-wrap">
           <table className="data-table">

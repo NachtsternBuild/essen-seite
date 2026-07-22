@@ -26,11 +26,15 @@
 }
 
 .card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 1.05rem;
   font-weight: 700;
   margin-bottom: 16px;
   color: var(--text);
 }
+.card__title svg { flex-shrink: 0; color: var(--accent); }
 
 /* ─── Meal card ──────────────────────────────────────────────────────────────── */
 .meal-card {
@@ -67,7 +71,7 @@
   gap: 6px;
 }
 
-.meal-card__lock { font-size: 1rem; }
+.meal-card__lock { display: inline-flex; align-items: center; color: var(--text-muted); }
 
 .meal-card__badge {
   font-family: var(--font-secondary);
@@ -127,8 +131,10 @@
 .menu-item__main:disabled { cursor: default; }
 .menu-item__main:not(:disabled):hover .menu-item__name { color: var(--accent); }
 
-.menu-item__diet { font-size: 0.95rem; line-height: 1; flex-shrink: 0; }
-.menu-item__chevron { font-size: 0.6rem; color: var(--text-muted); flex-shrink: 0; }
+.menu-item__diet { display: inline-flex; align-items: center; flex-shrink: 0; }
+.menu-item__diet--vegan { color: #15803d; }
+.menu-item__diet--veg { color: #65a30d; }
+.menu-item__chevron { display: inline-flex; align-items: center; color: var(--text-muted); flex-shrink: 0; }
 
 .menu-item__details {
   padding: 6px 0 10px 22px;

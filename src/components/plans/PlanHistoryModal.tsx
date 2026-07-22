@@ -1,15 +1,17 @@
+import type { ReactNode } from 'react';
+import { History, Sparkles, Plus, Minus, Pencil, RefreshCw, Circle } from 'lucide-react';
 import { usePlanHistory } from '../../hooks/usePlanHistory';
 import { Modal } from '../shared/Modal';
 import { Spinner } from '../shared/Spinner';
 import { EmptyState } from '../shared/EmptyState';
 import type { PlanHistoryAction } from '../../types';
 
-const ACTION_ICON: Record<PlanHistoryAction, string> = {
-  created: '🆕',
-  meal_added: '➕',
-  meal_removed: '➖',
-  meals_updated: '✏️',
-  status_changed: '🔄',
+const ACTION_ICON: Record<PlanHistoryAction, ReactNode> = {
+  created: <Sparkles size={15} />,
+  meal_added: <Plus size={15} />,
+  meal_removed: <Minus size={15} />,
+  meals_updated: <Pencil size={15} />,
+  status_changed: <RefreshCw size={15} />,
 };
 
 function formatTime(iso: string): string {
@@ -35,17 +37,17 @@ export function PlanHistoryModal({ planId, open, onClose }: PlanHistoryModalProp
   const { entries, isLoading } = usePlanHistory(open ? planId : null);
 
   return (
-    <Modal open={open} onClose={onClose} title="🕓 Planhistorie">
+    <Modal open={open} onClose={onClose} title={<><History size={19} /> Planhistorie</>}>
       {isLoading ? (
         <Spinner />
       ) : entries.length === 0 ? (
-        <EmptyState icon="🕓" message="Noch keine Änderungen erfasst." />
+        <EmptyState icon={<History size={48} strokeWidth={1.5} />} message="Noch keine Änderungen erfasst." />
       ) : (
         <ul className="history-list">
           {entries.map(e => (
             <li key={e.id} className="history-item">
               <span className="history-item__icon" aria-hidden="true">
-                {ACTION_ICON[e.action] ?? '•'}
+                {ACTION_ICON[e.action] ?? <Circle size={8} fill="currentColor" />}
               </span>
               <div className="history-item__body">
                 <div className="history-item__summary">{e.summary}</div>

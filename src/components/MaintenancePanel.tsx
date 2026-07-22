@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Settings2 } from 'lucide-react';
 import type { MaintenanceSettings } from '../types';
 
 interface MaintenancePanelProps {
@@ -41,7 +42,7 @@ export function MaintenancePanel({ settings, onChange }: MaintenancePanelProps) 
   return (
     <div className="card maintenance-panel">
       <div className="maintenance-panel__header">
-        <h3 className="card__title">⚙️ Wartungssteuerung</h3>
+        <h3 className="card__title"><Settings2 size={18} /> Wartungssteuerung</h3>
         <div className="maintenance-panel__status">
           <span
             className={`status-dot ${active ? 'status-dot--active' : 'status-dot--inactive'}`}

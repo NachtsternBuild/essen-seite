@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { Check, ChevronUp, ChevronDown } from 'lucide-react';
 
 export interface SelectOption {
   value: string;
@@ -124,7 +125,9 @@ export function CustomSelect({
         <span className="custom-select__label">
           {selected?.label ?? <span className="custom-select__placeholder">{placeholder}</span>}
         </span>
-        <span className="custom-select__chevron" aria-hidden="true">{open ? '▴' : '▾'}</span>
+        <span className="custom-select__chevron" aria-hidden="true">
+          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </span>
       </button>
 
       {open && pos && (
@@ -152,7 +155,9 @@ export function CustomSelect({
             >
               {opt.node ?? opt.label}
               {opt.value === value && (
-                <span className="custom-select__check" aria-hidden="true">✓</span>
+                <span className="custom-select__check" aria-hidden="true">
+                  <Check size={16} />
+                </span>
               )}
             </button>
           ))}

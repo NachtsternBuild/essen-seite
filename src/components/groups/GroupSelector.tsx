@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Check, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGroupContext } from '../../context/GroupContext';
 import type { AuthUser } from '../../types';
 
@@ -50,7 +51,7 @@ export function GroupSelector({ currentUser }: GroupSelectorProps) {
           {activeGroup?.name ?? '–'}
         </span>
         <span className="group-selector__chevron" aria-hidden="true">
-          {open ? '▴' : '▾'}
+          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </span>
       </button>
 
@@ -71,7 +72,9 @@ export function GroupSelector({ currentUser }: GroupSelectorProps) {
               />
               <span>{g.name}</span>
               {g.id === activeGroup?.id && (
-                <span className="group-selector__check" aria-hidden="true">✓</span>
+                <span className="group-selector__check" aria-hidden="true">
+                  <Check size={16} />
+                </span>
               )}
             </button>
           ))}

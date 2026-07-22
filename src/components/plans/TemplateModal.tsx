@@ -1,3 +1,4 @@
+import { ClipboardList } from 'lucide-react';
 import { Modal } from '../shared/Modal';
 import { Spinner } from '../shared/Spinner';
 import { EmptyState } from '../shared/EmptyState';
@@ -23,12 +24,12 @@ export function TemplateModal({
   onAdopt,
 }: TemplateModalProps) {
   return (
-    <Modal open={open} onClose={onClose} title="📋 Plan aus Vorlage übernehmen">
+    <Modal open={open} onClose={onClose} title={<><ClipboardList size={19} /> Plan aus Vorlage übernehmen</>}>
       {isLoading ? (
         <Spinner />
       ) : templates.length === 0 ? (
         <EmptyState
-          icon="📋"
+          icon={<ClipboardList size={48} strokeWidth={1.5} />}
           message={'Noch keine Vorlagen vorhanden. Veröffentliche einen Plan über „Als Vorlage".'}
         />
       ) : (

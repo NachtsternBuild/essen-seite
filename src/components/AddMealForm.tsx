@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Carrot, Leaf, AlertTriangle } from 'lucide-react';
 import { mealItemSchema } from '../lib/validation';
 import { ALLERGENS } from '../types';
 import type { MealItem } from '../types';
@@ -102,7 +103,7 @@ export function AddMealForm({ day, autoNumber, onAdd }: AddMealFormProps) {
               onChange={e => { setVegetarian(e.target.checked); if (!e.target.checked) setVegan(false); }}
               aria-label="Vegetarisch"
             />
-            🥦
+            <Carrot size={16} />
           </label>
           <label
             className={`diet-flag diet-flag--vegan${vegan ? ' diet-flag--active' : ''}`}
@@ -114,7 +115,7 @@ export function AddMealForm({ day, autoNumber, onAdd }: AddMealFormProps) {
               onChange={e => { setVegan(e.target.checked); if (e.target.checked) setVegetarian(true); }}
               aria-label="Vegan"
             />
-            🌱
+            <Leaf size={16} />
           </label>
           <span className="allergen-toggle">
             <button
@@ -124,7 +125,7 @@ export function AddMealForm({ day, autoNumber, onAdd }: AddMealFormProps) {
               title={selectedAllergens.length > 0 ? `${selectedAllergens.length} Allergen(e) ausgewählt` : 'Allergene'}
               aria-expanded={showAllergens}
             >
-              ⚠️
+              <AlertTriangle size={16} />
             </button>
             {selectedAllergens.length > 0 && (
               <span className="allergen-toggle__count" aria-hidden="true">

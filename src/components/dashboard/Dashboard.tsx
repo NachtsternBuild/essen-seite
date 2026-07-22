@@ -1,4 +1,23 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
+import {
+  UtensilsCrossed,
+  Building2,
+  ClipboardList,
+  CheckCircle2,
+  Euro,
+  Hourglass,
+  PartyPopper,
+  BarChart3,
+  Receipt,
+  Users,
+  Star,
+  ShieldCheck,
+  UserCog,
+  Wrench,
+  Calendar,
+  TrendingUp,
+  ChevronRight,
+} from 'lucide-react';
 import { StatCard } from '../shared/StatCard';
 import { EmptyState } from '../shared/EmptyState';
 import { summarizeOrdersByUser } from '../../lib/statistics';
@@ -137,28 +156,28 @@ function WeekSummary(props: DashboardProps) {
   return (
     <section className="card">
       <div className="dashboard__panel-head">
-        <h3 className="card__title">🍽 Meine Woche</h3>
+        <h3 className="card__title"><UtensilsCrossed size={18} /> Meine Woche</h3>
         {activeGroup && <span className="badge badge--muted">{focus.label}</span>}
       </div>
 
       {!activeGroup ? (
-        <EmptyState icon="🏢" message="Du bist noch keiner Gruppe zugeordnet." />
+        <EmptyState icon={<Building2 size={48} strokeWidth={1.5} />} message="Du bist noch keiner Gruppe zugeordnet." />
       ) : !planHasMeals(focus.plan) ? (
         <EmptyState
-          icon="📋"
+          icon={<ClipboardList size={48} strokeWidth={1.5} />}
           message="Für diese und die nächste Woche ist noch kein Menü eingetragen."
           action={{ label: 'Woche planen', onClick: () => onNavigate('upcoming') }}
         />
       ) : (
         <>
           <div className="stat-grid">
-            <StatCard icon="✅" label={`Bestellt (${focus.label})`} value={`${orderedDays.length}/5`} accent />
-            <StatCard icon="💶" label="Mein Betrag" value={`${formatPrice(myTotal)} €`} />
+            <StatCard icon={<CheckCircle2 size={22} />} label={`Bestellt (${focus.label})`} value={`${orderedDays.length}/5`} accent />
+            <StatCard icon={<Euro size={22} />} label="Mein Betrag" value={`${formatPrice(myTotal)} €`} />
             <StatCard
-              icon="⏳"
+              icon={<Hourglass size={22} />}
               label="Offene Tage"
               value={missingDays.length}
-              hint={missingDays.length ? missingDays.join(', ') : 'Alles bestellt 🎉'}
+              hint={missingDays.length ? missingDays.join(', ') : <>Alles bestellt <PartyPopper size={13} /></>}
             />
           </div>
 
@@ -209,15 +228,15 @@ function GroupSummary(props: DashboardProps) {
   return (
     <section className="card">
       <div className="dashboard__panel-head">
-        <h3 className="card__title">📊 Gruppenwoche – {activeGroup.name}</h3>
+        <h3 className="card__title"><BarChart3 size={18} /> Gruppenwoche – {activeGroup.name}</h3>
         <span className="badge badge--muted">{focus.label}</span>
       </div>
       <div className="stat-grid">
-        <StatCard icon="🧾" label="Bestellungen (Woche)" value={summary.orders} accent />
-        <StatCard icon="👥" label="Teilnehmer" value={summary.participants} />
-        <StatCard icon="💶" label="Umsatz (Woche)" value={`${formatPrice(summary.revenue)} €`} />
+        <StatCard icon={<Receipt size={22} />} label="Bestellungen (Woche)" value={summary.orders} accent />
+        <StatCard icon={<Users size={22} />} label="Teilnehmer" value={summary.participants} />
+        <StatCard icon={<Euro size={22} />} label="Umsatz (Woche)" value={`${formatPrice(summary.revenue)} €`} />
         <StatCard
-          icon="⭐"
+          icon={<Star size={22} />}
           label="Top-Menü"
           value={summary.topMeal ? `Nr. ${summary.topMeal.number}` : '—'}
           hint={summary.topMeal?.name}
@@ -237,12 +256,12 @@ function SystemSummary({ allGroups, allUsers }: DashboardProps) {
 
   return (
     <section className="card">
-      <h3 className="card__title">🛡 Systemübersicht</h3>
+      <h3 className="card__title"><ShieldCheck size={18} /> Systemübersicht</h3>
       <div className="stat-grid">
-        <StatCard icon="🏢" label="Aktive Gruppen" value={activeGroups} accent hint={archived ? `${archived} archiviert` : undefined} />
-        <StatCard icon="👥" label="Nutzer gesamt" value={allUsers.length} />
-        <StatCard icon="🛠" label="Administratoren" value={admins} />
-        <StatCard icon="🛡" label="Superuser" value={superusers} />
+        <StatCard icon={<Building2 size={22} />} label="Aktive Gruppen" value={activeGroups} accent hint={archived ? `${archived} archiviert` : undefined} />
+        <StatCard icon={<Users size={22} />} label="Nutzer gesamt" value={allUsers.length} />
+        <StatCard icon={<UserCog size={22} />} label="Administratoren" value={admins} />
+        <StatCard icon={<ShieldCheck size={22} />} label="Superuser" value={superusers} />
       </div>
     </section>
   );
@@ -254,32 +273,32 @@ function ManagementPanel({ isSuperuser, onNavigate }: DashboardProps) {
   return (
     <section className="card dashboard__tools">
       <div className="dashboard__panel-head">
-        <h3 className="card__title">🛠 Verwaltung &amp; Werkzeuge</h3>
+        <h3 className="card__title"><Wrench size={18} /> Verwaltung &amp; Werkzeuge</h3>
         <span className="badge badge--muted">{isSuperuser ? 'Superuser' : 'Administrator'}</span>
       </div>
       <div className="dashboard__tool-grid">
         <ToolButton
-          icon="👥"
+          icon={<Users size={22} />}
           label="Nutzer"
           desc="Konten & Rollen verwalten"
           onClick={() => onNavigate('users')}
         />
         {isSuperuser && (
           <ToolButton
-            icon="🏢"
+            icon={<Building2 size={22} />}
             label="Gruppen"
             desc="Gruppen & Verknüpfungen"
             onClick={() => onNavigate('groups')}
           />
         )}
         <ToolButton
-          icon="📅"
+          icon={<Calendar size={22} />}
           label="Planung"
           desc="Wochenmenü pflegen"
           onClick={() => onNavigate('upcoming')}
         />
         <ToolButton
-          icon="📈"
+          icon={<TrendingUp size={22} />}
           label="Statistiken"
           desc="Auswertungen & Vergleich"
           onClick={() => onNavigate('stats')}
@@ -295,7 +314,7 @@ function ToolButton({
   desc,
   onClick,
 }: {
-  icon: string;
+  icon: ReactNode;
   label: string;
   desc: string;
   onClick: () => void;
@@ -307,7 +326,7 @@ function ToolButton({
         <span className="dashboard__tool-label">{label}</span>
         <span className="dashboard__tool-desc">{desc}</span>
       </span>
-      <span className="dashboard__tool-arrow" aria-hidden="true">→</span>
+      <span className="dashboard__tool-arrow" aria-hidden="true"><ChevronRight size={18} /></span>
     </button>
   );
 }
