@@ -18,7 +18,7 @@ export function isLocked(day: string): boolean {
   if (currentDayNum === targetDayNum) {
     const h = now.getHours();
     const m = now.getMinutes();
-    if (h > 8 || (h === 8 && m >= 30)) return true;
+    if (h > 7 || (h === 7 && m >= 30)) return true;
   }
   return false;
 }

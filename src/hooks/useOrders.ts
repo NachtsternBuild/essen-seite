@@ -56,7 +56,7 @@ export function useOrders(
       }
       if (isCurrentWeek && isLocked(day)) {
         addToast(
-          'Nach 08:30 Uhr sind keine Änderungen für heute mehr möglich!',
+          'Nach 07:30 Uhr sind keine Änderungen für heute mehr möglich!',
           'warning'
         );
         return;

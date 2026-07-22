@@ -640,7 +640,7 @@ export default function App() {
 
             <div className="info-banner" role="note">
               <Pin size={16} /> Änderungen sind nur für zukünftige Tage oder heute vor{' '}
-              <strong>08:30 Uhr</strong> möglich.
+              <strong>07:30 Uhr</strong> möglich.
             </div>
 
             {!currentPlan ? (

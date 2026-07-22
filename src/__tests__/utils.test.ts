@@ -30,14 +30,14 @@ describe('isLocked', () => {
     vi.useRealTimers();
   });
 
-  it('locks today after 08:30', () => {
-    vi.setSystemTime(new Date(2025, 0, 6, 8, 31)); // Monday 08:31
+  it('locks today after 07:30', () => {
+    vi.setSystemTime(new Date(2025, 0, 6, 7, 31)); // Monday 07:31
     expect(isLocked('Montag')).toBe(true);
     vi.useRealTimers();
   });
 
-  it('does not lock today before 08:30', () => {
-    vi.setSystemTime(new Date(2025, 0, 6, 8, 29)); // Monday 08:29
+  it('does not lock today before 07:30', () => {
+    vi.setSystemTime(new Date(2025, 0, 6, 7, 29)); // Monday 07:29
     expect(isLocked('Montag')).toBe(false);
     vi.useRealTimers();
   });
